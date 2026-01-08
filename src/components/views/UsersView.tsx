@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert } from 'lucide-react';
-import { DragonLogo } from '@/components/DragonLogo';
+import { PageHeader } from '@/components/PageHeader';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -94,17 +94,7 @@ export function UsersView() {
 
   return (
     <div className="space-y-6 pb-24 animate-fade-in">
-      <header className="pt-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              <span className="text-gradient">SMoKi</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">Zarządzanie użytkownikami</p>
-          </div>
-          <DragonLogo className="w-16 h-16" />
-        </div>
-      </header>
+      <PageHeader subtitle="Zarządzanie użytkownikami" />
 
       {/* Add new user form */}
       <Card className="glass-card">

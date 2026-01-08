@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useHallCosts } from '@/hooks/useHallCosts';
 import { useOtherExpenses } from '@/hooks/useOtherExpenses';
 import { useAuth } from '@/contexts/AuthContext';
-import { DragonLogo } from '@/components/DragonLogo';
+import { PageHeader } from '@/components/PageHeader';
 import type { Player, AttendanceRecord, PaymentRecord, CancelledSession } from '@/types';
 
 interface ReportsViewProps {
@@ -116,17 +116,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
 
   return (
     <div className="space-y-6 pb-24">
-      <header className="pt-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              <span className="text-gradient">SMoKi</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">Raporty miesięczne</p>
-          </div>
-          <DragonLogo className="w-16 h-16" />
-        </div>
-      </header>
+      <PageHeader subtitle="Raporty miesięczne" />
 
       {/* Global cash balance */}
       <div className={cn(
