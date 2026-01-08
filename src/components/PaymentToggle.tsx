@@ -5,9 +5,10 @@ interface PaymentToggleProps {
   player: Player;
   paid: boolean;
   onToggle: () => void;
+  disabled?: boolean;
 }
 
-export function PaymentToggle({ player, paid, onToggle }: PaymentToggleProps) {
+export function PaymentToggle({ player, paid, onToggle, disabled = false }: PaymentToggleProps) {
   return (
     <div className={cn(
       "w-full p-4 rounded-xl flex items-center justify-between gap-4 transition-all duration-200 border",
@@ -29,11 +30,13 @@ export function PaymentToggle({ player, paid, onToggle }: PaymentToggleProps) {
       
       <button
         onClick={onToggle}
+        disabled={disabled}
         className={cn(
           "px-4 py-2 rounded-lg font-semibold text-sm tap-target transition-all duration-200",
           paid 
             ? "gradient-success text-success-foreground glow-success" 
-            : "gradient-destructive text-destructive-foreground glow-destructive"
+            : "gradient-destructive text-destructive-foreground glow-destructive",
+          disabled && "opacity-60 cursor-not-allowed"
         )}
       >
         {paid ? 'Zapłacone' : 'Nie zapłacone'}

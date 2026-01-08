@@ -1,17 +1,25 @@
-import { ClipboardCheck, BarChart3, Users } from 'lucide-react';
+import { ClipboardCheck, BarChart3, Users, UserCog, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import type { Tab } from '@/pages/Index';
 
 interface BottomNavProps {
-  activeTab: 'attendance' | 'reports' | 'players';
-  onTabChange: (tab: 'attendance' | 'reports' | 'players') => void;
+  activeTab: Tab;
+  onTabChange: (tab: Tab) => void;
+  showPlayers?: boolean;
+  showUsers?: boolean;
 }
 
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+export function BottomNav({ activeTab, onTabChange, showPlayers = false, showUsers = false }: BottomNavProps) {
+  const { signOut } = useAuth();
+
   const tabs = [
-    { id: 'attendance' as const, label: 'Obecność', icon: ClipboardCheck },
-    { id: 'reports' as const, label: 'Raporty', icon: BarChart3 },
-    { id: 'players' as const, label: 'Zawodnicy', icon: Users },
-  ];
+    { id: 'attendance' as const, label: 'Obecność', icon: ClipboardCheck, show: true },
+    { id: 'reports' as const, label: 'Raporty', icon: BarChart3, show: true },
+    { id: 'players' as const, label: 'Zawodnicy', icon: Users, show: showPlayers },
+    { id: 'users' as const, label: 'Użytkownicy', icon: UserCog, show: showUsers },
+  ].filter(tab => tab.show);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/50 safe-area-inset-bottom">
@@ -49,6 +57,18 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             </button>
           );
         })}
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={signOut}
+          className="flex flex-col items-center justify-center h-full gap-1 text-muted-foreground hover:text-foreground"
+        >
+          <div className="p-2">
+            <LogOut className="w-5 h-5" />
+          </div>
+          <span className="text-xs font-medium">Wyloguj</span>
+        </Button>
       </div>
     </nav>
   );

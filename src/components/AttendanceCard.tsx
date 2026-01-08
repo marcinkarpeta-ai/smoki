@@ -6,17 +6,20 @@ interface AttendanceCardProps {
   player: Player;
   present: boolean;
   onToggle: () => void;
+  disabled?: boolean;
 }
 
-export function AttendanceCard({ player, present, onToggle }: AttendanceCardProps) {
+export function AttendanceCard({ player, present, onToggle, disabled = false }: AttendanceCardProps) {
   return (
     <button
       onClick={onToggle}
+      disabled={disabled}
       className={cn(
         "w-full p-4 rounded-xl tap-target flex items-center justify-between gap-4 transition-all duration-200 border",
         present 
           ? "gradient-success glow-success border-success/30" 
-          : "bg-card border-border hover:border-muted-foreground/30"
+          : "bg-card border-border hover:border-muted-foreground/30",
+        disabled && "opacity-60 cursor-not-allowed"
       )}
     >
       <div className="flex items-center gap-3">
