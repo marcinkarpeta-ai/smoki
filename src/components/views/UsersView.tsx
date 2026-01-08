@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
-import { Card, CardContent } from '@/components/ui/card';
+import { useCreateUser } from '@/hooks/useCreateUser';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Users, Shield, ClipboardCheck, CreditCard } from 'lucide-react';
+import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -27,6 +32,41 @@ const roleColors: Record<AppRole, string> = {
 
 export function UsersView() {
   const { users, isLoading, updateRole, isUpdating } = useUsers();
+  const { createUser, isCreating } = useCreateUser();
+  
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState<string>('none');
+  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate
+    const errors: { email?: string; password?: string } = {};
+    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      errors.email = 'Podaj prawidłowy adres email';
+    }
+    if (!newPassword || newPassword.length < 6) {
+      errors.password = 'Hasło musi mieć co najmniej 6 znaków';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    
+    setFormErrors({});
+    
+    const role = newRole === 'none' ? null : newRole as AppRole;
+    const result = await createUser(newEmail, newPassword, role);
+    
+    if (result.success) {
+      setNewEmail('');
+      setNewPassword('');
+      setNewRole('none');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,9 +83,83 @@ export function UsersView() {
           Użytkownicy
         </h1>
         <p className="text-muted-foreground text-sm">
-          Zarządzanie rolami użytkowników
+          Zarządzanie użytkownikami i rolami
         </p>
       </header>
+
+      {/* Add new user form */}
+      <Card className="glass-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Dodaj nowego użytkownika
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="new-email">Email</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  placeholder="uzytkownik@email.pl"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className={formErrors.email ? 'border-destructive' : ''}
+                />
+                {formErrors.email && (
+                  <p className="text-sm text-destructive">{formErrors.email}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Hasło</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className={formErrors.password ? 'border-destructive' : ''}
+                />
+                {formErrors.password && (
+                  <p className="text-sm text-destructive">{formErrors.password}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="new-role">Rola (opcjonalnie)</Label>
+                <Select value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger id="new-role">
+                    <SelectValue placeholder="Wybierz rolę" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Brak roli</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="attendance_manager">Menedżer obecności</SelectItem>
+                    <SelectItem value="payment_manager">Menedżer płatności</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  type="submit" 
+                  className="w-full sm:w-auto gradient-primary"
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <UserPlus className="h-4 w-4 mr-2" />
+                  )}
+                  Dodaj użytkownika
+                </Button>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">

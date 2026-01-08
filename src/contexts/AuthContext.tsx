@@ -10,9 +10,10 @@ interface AuthContextType {
   session: Session | null;
   role: AppRole | null;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   hasRole: (role: AppRole) => boolean;
   canManageAttendance: boolean;
   canManagePayments: boolean;
@@ -82,20 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
-    
-    return { error: error ? new Error(error.message) : null };
-  };
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -108,6 +95,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRole(null);
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?mode=reset`
+    });
+    
+    return { error: error ? new Error(error.message) : null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    
+    return { error: error ? new Error(error.message) : null };
   };
 
   const hasRole = (checkRole: AppRole) => {
@@ -126,9 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       role,
       isLoading,
-      signUp,
       signIn,
       signOut,
+      resetPassword,
+      updatePassword,
       hasRole,
       canManageAttendance,
       canManagePayments,
