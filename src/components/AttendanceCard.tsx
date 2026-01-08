@@ -42,7 +42,7 @@ export function AttendanceCard({ player, present, onToggle, disabled = false }: 
             "text-sm transition-colors",
             present ? "text-success-foreground/70" : "text-muted-foreground"
           )}>
-            {present ? 'Obecny/a' : 'Nieobecny/a'}
+            {present ? 'Obecny' : 'Nieobecny'}
           </p>
         </div>
       </div>
