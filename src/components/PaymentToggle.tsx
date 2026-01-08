@@ -103,7 +103,7 @@ export function PaymentToggle({ player, paid, amount = 150, onToggle, disabled =
         onClick={handleToggleClick}
         disabled={disabled}
         className={cn(
-          "px-4 py-2 rounded-lg font-semibold text-sm tap-target transition-all duration-200",
+          "px-4 py-2 rounded-lg font-semibold text-sm tap-target transition-all duration-200 whitespace-nowrap",
           paid 
             ? "gradient-success text-success-foreground glow-success" 
             : "gradient-destructive text-destructive-foreground glow-destructive",
