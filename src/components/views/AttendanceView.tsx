@@ -81,8 +81,8 @@ export function AttendanceView({
 
       {isAdmin && onCancelToggle && (
         <Button
-          variant={isCancelled ? "outline" : "destructive"}
-          className="w-full"
+          variant={isCancelled ? "outline" : "default"}
+          className={isCancelled ? "w-full" : "w-full gradient-primary"}
           onClick={() => onCancelToggle(selectedDate)}
         >
           <Ban className="w-4 h-4 mr-2" />
