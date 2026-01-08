@@ -5,7 +5,7 @@ import { AttendanceCard } from '@/components/AttendanceCard';
 import { PaymentToggle } from '@/components/PaymentToggle';
 import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
-import { DragonLogo } from '@/components/DragonLogo';
+import { PageHeader } from '@/components/PageHeader';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
 interface AttendanceViewProps {
@@ -61,17 +61,7 @@ export function AttendanceView({
 
   return (
     <div className="space-y-6 pb-24">
-      <header className="pt-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              <span className="text-gradient">SMoKi</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">Panel obecności</p>
-          </div>
-          <DragonLogo className="w-16 h-16" />
-        </div>
-      </header>
+      <PageHeader subtitle="Panel obecności" />
 
       <DateSelector 
         selectedDate={selectedDate} 

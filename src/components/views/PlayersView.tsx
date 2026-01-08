@@ -1,7 +1,7 @@
 import { Users } from 'lucide-react';
 import { PlayerForm } from '@/components/PlayerForm';
 import { PlayerCard } from '@/components/PlayerCard';
-import { DragonLogo } from '@/components/DragonLogo';
+import { PageHeader } from '@/components/PageHeader';
 import type { Player } from '@/types';
 
 interface PlayersViewProps {
@@ -13,17 +13,7 @@ interface PlayersViewProps {
 export function PlayersView({ players, onAddPlayer, onDeletePlayer }: PlayersViewProps) {
   return (
     <div className="space-y-6 pb-24">
-      <header className="pt-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              <span className="text-gradient">SMoKi</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">Stowarzyszenie Miłośników Koszykówki</p>
-          </div>
-          <DragonLogo className="w-16 h-16" />
-        </div>
-      </header>
+      <PageHeader subtitle="Stowarzyszenie Miłośników Koszykówki" />
 
       <PlayerForm onAdd={onAddPlayer} />
 

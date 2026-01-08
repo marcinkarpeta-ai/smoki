@@ -47,6 +47,11 @@ const Index = () => {
     }
   }, [activeTab, canManagePlayers, canManageUsers]);
 
+  // Reset scroll on tab change
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [activeTab]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
