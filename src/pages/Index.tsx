@@ -9,18 +9,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAttendance } from '@/hooks/useAttendance';
 import { usePayments } from '@/hooks/usePayments';
+import { useCancelledSessions } from '@/hooks/useCancelledSessions';
 import { Loader2 } from 'lucide-react';
 
 export type Tab = 'attendance' | 'reports' | 'players' | 'users';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, canManagePlayers, canManageUsers, canManageAttendance, canManagePayments } = useAuth();
+  const { user, isLoading: authLoading, canManagePlayers, canManageUsers, canManageAttendance, canManagePayments, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('attendance');
   
   const { players, addPlayer, deletePlayer } = usePlayers();
   const { attendance, toggleAttendance } = useAttendance();
   const { payments, togglePayment } = usePayments();
+  const { cancelledSessions, toggleCancel } = useCancelledSessions();
+  
+  const cancelledDates = cancelledSessions.map(s => s.sessionDate);
 
   // Sort players alphabetically by first name
   const sortedPlayers = [...players].sort((a, b) => 
@@ -91,6 +95,9 @@ const Index = () => {
             onPaymentToggle={handlePaymentToggle}
             canEditAttendance={canManageAttendance}
             canEditPayments={canManagePayments}
+            isAdmin={isAdmin}
+            cancelledDates={cancelledDates}
+            onCancelToggle={toggleCancel}
           />
         )}
         
@@ -99,6 +106,7 @@ const Index = () => {
             players={sortedPlayers}
             attendance={attendance}
             payments={payments}
+            cancelledSessions={cancelledSessions}
           />
         )}
         

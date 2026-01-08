@@ -21,3 +21,11 @@ export interface TrainingSession {
   date: string;
   dayOfWeek: string;
 }
+
+export interface CancelledSession {
+  id: string;
+  sessionDate: string;
+  reason: string;
+  cancelledBy: string | null;
+  createdAt: string;
+}
