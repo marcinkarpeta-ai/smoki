@@ -61,8 +61,8 @@ export function AttendanceView({
   return (
     <div className="space-y-6 pb-24">
       <header className="pt-4">
-        <h1 className="text-2xl font-bold text-foreground">
-          Basket<span className="text-gradient">Manager</span>
+        <h1 className="text-2xl font-bold">
+          <span className="text-gradient">SMoKi</span>
         </h1>
         <p className="text-muted-foreground mt-1">Panel obecności</p>
       </header>

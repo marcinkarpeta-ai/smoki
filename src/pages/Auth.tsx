@@ -94,7 +94,7 @@ export default function Auth() {
     } else {
       toast({
         title: 'Zalogowano',
-        description: 'Witaj w BasketManager!'
+        description: 'Witaj w SMoKi!'
       });
       navigate('/');
     }
@@ -164,7 +164,7 @@ export default function Auth() {
           <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center glow-primary">
             <Dribbble className="w-8 h-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">BasketManager</CardTitle>
+          <CardTitle className="text-2xl font-bold"><span className="text-gradient">SMoKi</span></CardTitle>
           <CardDescription>
             {viewMode === 'login' && 'Zaloguj się do systemu'}
             {viewMode === 'forgot-password' && 'Zresetuj swoje hasło'}
