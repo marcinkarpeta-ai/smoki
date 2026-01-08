@@ -1,57 +1,83 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Dribbble } from 'lucide-react';
+import { Loader2, Dribbble, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
-const authSchema = z.object({
-  email: z.string().email('Nieprawidłowy adres email'),
-  password: z.string().min(6, 'Hasło musi mieć co najmniej 6 znaków')
-});
+const emailSchema = z.string().email('Nieprawidłowy adres email');
+const passwordSchema = z.string().min(6, 'Hasło musi mieć co najmniej 6 znaków');
+
+type ViewMode = 'login' | 'forgot-password' | 'reset-password';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signIn, signUp, isLoading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, signIn, resetPassword, updatePassword, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [viewMode, setViewMode] = useState<ViewMode>('login');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
-    if (user && !authLoading) {
+    // Check if this is a password reset callback
+    const mode = searchParams.get('mode');
+    if (mode === 'reset') {
+      setViewMode('reset-password');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user && !authLoading && viewMode !== 'reset-password') {
       navigate('/');
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, viewMode]);
 
-  const validateForm = () => {
-    try {
-      authSchema.parse({ email, password });
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string } = {};
-        error.errors.forEach(err => {
-          if (err.path[0] === 'email') fieldErrors.email = err.message;
-          if (err.path[0] === 'password') fieldErrors.password = err.message;
-        });
-        setErrors(fieldErrors);
-      }
-      return false;
-    }
+  const validateLoginForm = () => {
+    const emailResult = emailSchema.safeParse(email);
+    const passwordResult = passwordSchema.safeParse(password);
+    
+    const newErrors: { email?: string; password?: string } = {};
+    if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
+    if (!passwordResult.success) newErrors.password = passwordResult.error.errors[0].message;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateEmailForm = () => {
+    const emailResult = emailSchema.safeParse(email);
+    
+    const newErrors: { email?: string } = {};
+    if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateResetForm = () => {
+    const passwordResult = passwordSchema.safeParse(password);
+    
+    const newErrors: { password?: string; confirmPassword?: string } = {};
+    if (!passwordResult.success) newErrors.password = passwordResult.error.errors[0].message;
+    if (password !== confirmPassword) newErrors.confirmPassword = 'Hasła muszą być identyczne';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateLoginForm()) return;
 
     setIsLoading(true);
     const { error } = await signIn(email, password);
@@ -74,34 +100,52 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateEmailForm()) return;
 
     setIsLoading(true);
-    const { error } = await signUp(email, password);
+    const { error } = await resetPassword(email);
     setIsLoading(false);
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        toast({
-          variant: 'destructive',
-          title: 'Błąd rejestracji',
-          description: 'Ten adres email jest już zarejestrowany. Spróbuj się zalogować.'
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Błąd rejestracji',
-          description: error.message
-        });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.message
+      });
+    } else {
+      setResetEmailSent(true);
+      toast({
+        title: 'Email wysłany',
+        description: 'Sprawdź swoją skrzynkę pocztową.'
+      });
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateResetForm()) return;
+
+    setIsLoading(true);
+    const { error } = await updatePassword(password);
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.message
+      });
     } else {
       toast({
-        title: 'Konto utworzone',
-        description: 'Możesz teraz korzystać z aplikacji.'
+        title: 'Hasło zmienione',
+        description: 'Możesz teraz zalogować się nowym hasłem.'
       });
-      navigate('/');
+      setViewMode('login');
+      setPassword('');
+      setConfirmPassword('');
+      navigate('/auth');
     }
   };
 
@@ -122,104 +166,184 @@ export default function Auth() {
           </div>
           <CardTitle className="text-2xl font-bold">BasketManager</CardTitle>
           <CardDescription>
-            Zaloguj się lub utwórz konto
+            {viewMode === 'login' && 'Zaloguj się do systemu'}
+            {viewMode === 'forgot-password' && 'Zresetuj swoje hasło'}
+            {viewMode === 'reset-password' && 'Ustaw nowe hasło'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Logowanie</TabsTrigger>
-              <TabsTrigger value="register">Rejestracja</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="twoj@email.pl"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={errors.email ? 'border-destructive' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
+          {viewMode === 'login' && (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  placeholder="twoj@email.pl"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={errors.email ? 'border-destructive' : ''}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Hasło</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={errors.password ? 'border-destructive' : ''}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full gradient-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Zaloguj się'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                className="w-full text-muted-foreground"
+                onClick={() => {
+                  setViewMode('forgot-password');
+                  setErrors({});
+                  setPassword('');
+                }}
+              >
+                Zapomniałem hasła
+              </Button>
+            </form>
+          )}
+
+          {viewMode === 'forgot-password' && (
+            <div className="space-y-4">
+              {resetEmailSent ? (
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    Link do resetowania hasła został wysłany na adres <strong>{email}</strong>.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Sprawdź swoją skrzynkę pocztową i kliknij w link, aby ustawić nowe hasło.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setViewMode('login');
+                      setResetEmailSent(false);
+                      setEmail('');
+                    }}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Powrót do logowania
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Hasło</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={errors.password ? 'border-destructive' : ''}
-                  />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full gradient-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Zaloguj się'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleSignUp} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="twoj@email.pl"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={errors.email ? 'border-destructive' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Hasło</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={errors.password ? 'border-destructive' : ''}
-                  />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full gradient-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Zarejestruj się'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Podaj swój adres email, a wyślemy Ci link do resetowania hasła.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="twoj@email.pl"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={errors.email ? 'border-destructive' : ''}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full gradient-primary"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Wyślij link resetujący'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => {
+                      setViewMode('login');
+                      setErrors({});
+                    }}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Powrót do logowania
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'reset-password' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Wprowadź nowe hasło dla swojego konta.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nowe hasło</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={errors.password ? 'border-destructive' : ''}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Potwierdź hasło</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={errors.confirmPassword ? 'border-destructive' : ''}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full gradient-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Ustaw nowe hasło'
+                )}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
