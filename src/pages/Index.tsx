@@ -15,6 +15,11 @@ const Index = () => {
   const [attendance, setAttendance] = useLocalStorage<AttendanceRecord[]>('basketmanager_attendance', []);
   const [payments, setPayments] = useLocalStorage<PaymentRecord[]>('basketmanager_payments', []);
 
+  // Sort players alphabetically by first name
+  const sortedPlayers = [...players].sort((a, b) => 
+    a.firstName.localeCompare(b.firstName, 'pl')
+  );
+
   const handleAddPlayer = (firstName: string, lastName: string) => {
     const newPlayer: Player = {
       id: crypto.randomUUID(),
@@ -64,7 +69,7 @@ const Index = () => {
       <main className="container max-w-lg mx-auto px-4">
         {activeTab === 'attendance' && (
           <AttendanceView
-            players={players}
+            players={sortedPlayers}
             attendance={attendance}
             payments={payments}
             onAttendanceToggle={handleAttendanceToggle}
@@ -74,7 +79,7 @@ const Index = () => {
         
         {activeTab === 'reports' && (
           <ReportsView
-            players={players}
+            players={sortedPlayers}
             attendance={attendance}
             payments={payments}
           />
@@ -82,7 +87,7 @@ const Index = () => {
         
         {activeTab === 'players' && (
           <PlayersView
-            players={players}
+            players={sortedPlayers}
             onAddPlayer={handleAddPlayer}
             onDeletePlayer={handleDeletePlayer}
           />
