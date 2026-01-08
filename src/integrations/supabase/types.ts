@@ -49,6 +49,30 @@ export type Database = {
           },
         ]
       }
+      cancelled_sessions: {
+        Row: {
+          cancelled_by: string | null
+          created_at: string
+          id: string
+          reason: string
+          session_date: string
+        }
+        Insert: {
+          cancelled_by?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          session_date: string
+        }
+        Update: {
+          cancelled_by?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          session_date?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           created_at: string

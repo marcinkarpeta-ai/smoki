@@ -18,6 +18,7 @@ interface AuthContextType {
   canManagePayments: boolean;
   canManagePlayers: boolean;
   canManageUsers: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return role === checkRole;
   };
 
+  const isAdmin = role === 'admin';
   const canManageAttendance = role === 'admin' || role === 'attendance_manager';
   const canManagePayments = role === 'admin' || role === 'payment_manager';
   const canManagePlayers = role === 'admin';
@@ -131,7 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canManageAttendance,
       canManagePayments,
       canManagePlayers,
-      canManageUsers
+      canManageUsers,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

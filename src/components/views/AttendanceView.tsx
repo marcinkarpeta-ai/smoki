@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Users, Wallet } from 'lucide-react';
+import { Users, Wallet, Ban, AlertTriangle } from 'lucide-react';
 import { DateSelector } from '@/components/DateSelector';
 import { AttendanceCard } from '@/components/AttendanceCard';
 import { PaymentToggle } from '@/components/PaymentToggle';
 import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils/dateUtils';
+import { Button } from '@/components/ui/button';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
 interface AttendanceViewProps {
@@ -14,6 +15,9 @@ interface AttendanceViewProps {
   onPaymentToggle: (playerId: string, month: string) => void;
   canEditAttendance?: boolean;
   canEditPayments?: boolean;
+  isAdmin?: boolean;
+  cancelledDates?: string[];
+  onCancelToggle?: (date: string) => void;
 }
 
 export function AttendanceView({ 
@@ -23,10 +27,15 @@ export function AttendanceView({
   onAttendanceToggle, 
   onPaymentToggle,
   canEditAttendance = false,
-  canEditPayments = false
+  canEditPayments = false,
+  isAdmin = false,
+  cancelledDates = [],
+  onCancelToggle
 }: AttendanceViewProps) {
   const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
   const currentMonth = getCurrentMonth();
+
+  const isCancelled = cancelledDates.includes(selectedDate);
 
   const attendanceMap = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -56,7 +65,32 @@ export function AttendanceView({
         <p className="text-muted-foreground mt-1">Panel obecności</p>
       </header>
 
-      <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      <DateSelector 
+        selectedDate={selectedDate} 
+        onDateChange={setSelectedDate}
+        cancelledDates={cancelledDates}
+      />
+
+      {isCancelled && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-destructive">Trening odwołany</p>
+            <p className="text-sm text-destructive/80">Brak dostępu do hali</p>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && onCancelToggle && (
+        <Button
+          variant={isCancelled ? "outline" : "destructive"}
+          className="w-full"
+          onClick={() => onCancelToggle(selectedDate)}
+        >
+          <Ban className="w-4 h-4 mr-2" />
+          {isCancelled ? 'Przywróć trening' : 'Odwołaj trening'}
+        </Button>
+      )}
 
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -83,7 +117,7 @@ export function AttendanceView({
                 player={player}
                 present={attendanceMap.get(player.id) || false}
                 onToggle={() => onAttendanceToggle(player.id, selectedDate)}
-                disabled={!canEditAttendance}
+                disabled={!canEditAttendance || isCancelled}
               />
             ))}
           </div>
