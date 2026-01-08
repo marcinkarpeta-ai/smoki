@@ -62,11 +62,15 @@ export function AttendanceView({
   return (
     <div className="space-y-6 pb-24">
       <header className="pt-4">
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <DragonLogo className="w-10 h-10" />
-          <span className="text-gradient">SMoKi</span>
-        </h1>
-        <p className="text-muted-foreground mt-1">Panel obecności</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">
+              <span className="text-gradient">SMoKi</span>
+            </h1>
+            <p className="text-muted-foreground mt-1">Panel obecności</p>
+          </div>
+          <DragonLogo className="w-16 h-16" />
+        </div>
       </header>
 
       <DateSelector 
