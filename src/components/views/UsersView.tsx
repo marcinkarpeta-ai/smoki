@@ -201,22 +201,20 @@ export function UsersView() {
               return (
                 <Card key={user.id} className="glass-card card-hover">
                   <CardContent className="py-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{user.email}</p>
+                    <div className="flex flex-col gap-3">
+                      <div className="w-full">
+                        <p className="font-medium break-all">{user.email}</p>
                         <p className="text-xs text-muted-foreground">
                           Dołączył: {new Date(user.createdAt).toLocaleDateString('pl-PL')}
                         </p>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         {user.role && (
                           <Badge className={roleColors[user.role]}>
                             {RoleIcon && <RoleIcon className="w-3 h-3 mr-1" />}
                             {roleLabels[user.role]}
                           </Badge>
                         )}
-                        
                         <Select
                           value={user.role || 'none'}
                           onValueChange={(value) => {
