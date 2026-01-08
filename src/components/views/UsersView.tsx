@@ -93,7 +93,7 @@ export function UsersView() {
   }
 
   return (
-    <div className="space-y-6 pb-24 animate-fade-in">
+    <div className="space-y-6 pb-24">
       <PageHeader subtitle="Zarządzanie użytkownikami" />
 
       {/* Add new user form */}
