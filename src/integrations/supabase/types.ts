@@ -224,7 +224,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_masked: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: never
+          id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: never
+          id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -234,6 +251,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mask_email: { Args: { email: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "attendance_manager" | "payment_manager"
