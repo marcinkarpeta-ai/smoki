@@ -1,67 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { AttendanceView } from '@/components/views/AttendanceView';
 import { ReportsView } from '@/components/views/ReportsView';
 import { PlayersView } from '@/components/views/PlayersView';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
+import { UsersView } from '@/components/views/UsersView';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePlayers } from '@/hooks/usePlayers';
+import { useAttendance } from '@/hooks/useAttendance';
+import { usePayments } from '@/hooks/usePayments';
+import { Loader2 } from 'lucide-react';
 
-type Tab = 'attendance' | 'reports' | 'players';
+export type Tab = 'attendance' | 'reports' | 'players' | 'users';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading, canManagePlayers, canManageUsers, canManageAttendance, canManagePayments } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('attendance');
   
-  const [players, setPlayers] = useLocalStorage<Player[]>('basketmanager_players', []);
-  const [attendance, setAttendance] = useLocalStorage<AttendanceRecord[]>('basketmanager_attendance', []);
-  const [payments, setPayments] = useLocalStorage<PaymentRecord[]>('basketmanager_payments', []);
+  const { players, addPlayer, deletePlayer } = usePlayers();
+  const { attendance, toggleAttendance } = useAttendance();
+  const { payments, togglePayment } = usePayments();
 
   // Sort players alphabetically by first name
   const sortedPlayers = [...players].sort((a, b) => 
     a.firstName.localeCompare(b.firstName, 'pl')
   );
 
-  const handleAddPlayer = (firstName: string, lastName: string) => {
-    const newPlayer: Player = {
-      id: crypto.randomUUID(),
-      firstName,
-      lastName,
-      createdAt: new Date().toISOString(),
-    };
-    setPlayers(prev => [...prev, newPlayer]);
-  };
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
-  const handleDeletePlayer = (id: string) => {
-    setPlayers(prev => prev.filter(p => p.id !== id));
-    setAttendance(prev => prev.filter(a => a.playerId !== id));
-    setPayments(prev => prev.filter(p => p.playerId !== id));
-  };
+  // Reset tab if user doesn't have permission
+  useEffect(() => {
+    if (activeTab === 'players' && !canManagePlayers) {
+      setActiveTab('attendance');
+    }
+    if (activeTab === 'users' && !canManageUsers) {
+      setActiveTab('attendance');
+    }
+  }, [activeTab, canManagePlayers, canManageUsers]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleAttendanceToggle = (playerId: string, date: string) => {
-    setAttendance(prev => {
-      const existing = prev.find(a => a.playerId === playerId && a.date === date);
-      if (existing) {
-        return prev.map(a => 
-          a.playerId === playerId && a.date === date 
-            ? { ...a, present: !a.present }
-            : a
-        );
-      }
-      return [...prev, { playerId, date, present: true }];
-    });
+    if (canManageAttendance) {
+      toggleAttendance(playerId, date);
+    }
   };
 
   const handlePaymentToggle = (playerId: string, month: string) => {
-    setPayments(prev => {
-      const existing = prev.find(p => p.playerId === playerId && p.month === month);
-      if (existing) {
-        return prev.map(p => 
-          p.playerId === playerId && p.month === month 
-            ? { ...p, paid: !p.paid }
-            : p
-        );
-      }
-      return [...prev, { playerId, month, paid: true }];
-    });
+    if (canManagePayments) {
+      togglePayment(playerId, month);
+    }
+  };
+
+  const handleAddPlayer = (firstName: string, lastName: string) => {
+    if (canManagePlayers) {
+      addPlayer(firstName, lastName);
+    }
+  };
+
+  const handleDeletePlayer = (id: string) => {
+    if (canManagePlayers) {
+      deletePlayer(id);
+    }
   };
 
   return (
@@ -74,6 +89,8 @@ const Index = () => {
             payments={payments}
             onAttendanceToggle={handleAttendanceToggle}
             onPaymentToggle={handlePaymentToggle}
+            canEditAttendance={canManageAttendance}
+            canEditPayments={canManagePayments}
           />
         )}
         
@@ -85,16 +102,25 @@ const Index = () => {
           />
         )}
         
-        {activeTab === 'players' && (
+        {activeTab === 'players' && canManagePlayers && (
           <PlayersView
             players={sortedPlayers}
             onAddPlayer={handleAddPlayer}
             onDeletePlayer={handleDeletePlayer}
           />
         )}
+
+        {activeTab === 'users' && canManageUsers && (
+          <UsersView />
+        )}
       </main>
       
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        showPlayers={canManagePlayers}
+        showUsers={canManageUsers}
+      />
     </div>
   );
 };

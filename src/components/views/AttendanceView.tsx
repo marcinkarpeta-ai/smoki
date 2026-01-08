@@ -12,6 +12,8 @@ interface AttendanceViewProps {
   payments: PaymentRecord[];
   onAttendanceToggle: (playerId: string, date: string) => void;
   onPaymentToggle: (playerId: string, month: string) => void;
+  canEditAttendance?: boolean;
+  canEditPayments?: boolean;
 }
 
 export function AttendanceView({ 
@@ -19,7 +21,9 @@ export function AttendanceView({
   attendance, 
   payments, 
   onAttendanceToggle, 
-  onPaymentToggle 
+  onPaymentToggle,
+  canEditAttendance = false,
+  canEditPayments = false
 }: AttendanceViewProps) {
   const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
   const currentMonth = getCurrentMonth();
@@ -79,6 +83,7 @@ export function AttendanceView({
                 player={player}
                 present={attendanceMap.get(player.id) || false}
                 onToggle={() => onAttendanceToggle(player.id, selectedDate)}
+                disabled={!canEditAttendance}
               />
             ))}
           </div>
@@ -104,6 +109,7 @@ export function AttendanceView({
                 player={player}
                 paid={paymentMap.get(player.id) || false}
                 onToggle={() => onPaymentToggle(player.id, currentMonth)}
+                disabled={!canEditPayments}
               />
             ))}
           </div>
