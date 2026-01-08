@@ -93,13 +93,11 @@ export function UsersView() {
 
   return (
     <div className="py-6 pb-24 space-y-6 animate-fade-in">
-      <header className="text-center space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Użytkownicy
+      <header className="pt-4">
+        <h1 className="text-2xl font-bold">
+          <span className="text-gradient">SMoKi</span>
         </h1>
-        <p className="text-muted-foreground text-sm">
-          Zarządzanie użytkownikami i rolami
-        </p>
+        <p className="text-muted-foreground mt-1">Zarządzanie użytkownikami</p>
       </header>
 
       {/* Add new user form */}

@@ -6,25 +6,25 @@
 
 @layer base {
   :root {
-    --background: 220 20% 8%;
-    --foreground: 210 20% 95%;
+    --background: 280 15% 8%;
+    --foreground: 320 20% 95%;
 
-    --card: 220 18% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 280 15% 12%;
+    --card-foreground: 320 20% 95%;
 
-    --popover: 220 18% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 280 15% 12%;
+    --popover-foreground: 320 20% 95%;
 
-    --primary: 20 100% 55%;
+    --primary: 330 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 280 20% 18%;
+    --secondary-foreground: 320 15% 90%;
 
-    --muted: 220 15% 16%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 280 20% 16%;
+    --muted-foreground: 300 15% 55%;
 
-    --accent: 20 100% 55%;
+    --accent: 330 85% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -36,20 +36,20 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 20 100% 55%;
+    --border: 280 15% 22%;
+    --input: 280 15% 22%;
+    --ring: 330 85% 55%;
 
     --radius: 1rem;
 
-    --sidebar-background: 220 18% 10%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 20 100% 55%;
+    --sidebar-background: 280 15% 10%;
+    --sidebar-foreground: 320 20% 95%;
+    --sidebar-primary: 330 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 18%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 20 100% 55%;
+    --sidebar-accent: 280 20% 18%;
+    --sidebar-accent-foreground: 320 15% 90%;
+    --sidebar-border: 280 15% 22%;
+    --sidebar-ring: 330 85% 55%;
   }
 }
 
@@ -74,7 +74,7 @@
   }
 
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(25 100% 45%) 100%);
+    background: linear-gradient(135deg, hsl(330 85% 55%) 0%, hsl(350 80% 45%) 100%);
   }
 
   .gradient-success {
@@ -87,11 +87,11 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(30 100% 60%) 100%);
+    background: linear-gradient(135deg, hsl(330 85% 55%) 0%, hsl(300 70% 60%) 100%);
   }
 
   .glow-primary {
-    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 30px -5px hsl(330 85% 55% / 0.5);
   }
 
   .glow-success {
