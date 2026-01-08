@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Dribbble, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { DragonLogo } from '@/components/DragonLogo';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Nieprawidłowy adres email');
@@ -161,8 +162,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md glass-card">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center glow-primary">
-            <Dribbble className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto">
+            <DragonLogo className="w-20 h-20" />
           </div>
           <CardTitle className="text-2xl font-bold"><span className="text-gradient">SMoKi</span></CardTitle>
           <CardDescription>
