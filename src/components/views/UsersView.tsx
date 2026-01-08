@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
 import { useCreateUser } from '@/hooks/useCreateUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus } from 'lucide-react';
+import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -31,6 +32,7 @@ const roleColors: Record<AppRole, string> = {
 };
 
 export function UsersView() {
+  const { isAdmin } = useAuth();
   const { users, isLoading, updateRole, isUpdating } = useUsers();
   const { createUser, isCreating } = useCreateUser();
   
@@ -67,6 +69,19 @@ export function UsersView() {
       setNewRole('none');
     }
   };
+
+  // Sprawdzenie uprawnień - tylko admin może zarządzać użytkownikami
+  if (!isAdmin) {
+    return (
+      <div className="py-12 text-center animate-fade-in">
+        <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h2 className="text-lg font-semibold mb-2">Brak uprawnień</h2>
+        <p className="text-muted-foreground text-sm">
+          Tylko administratorzy mogą zarządzać użytkownikami
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
