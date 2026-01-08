@@ -1,8 +1,13 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck, Wallet, Building2, Receipt, PiggyBank, Plus, Trash2, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addMonths, subMonths } from 'date-fns';
 import { getTrainingSessions, formatMonthPolish, formatDatePolish } from '@/utils/dateUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useHallCosts } from '@/hooks/useHallCosts';
+import { useOtherExpenses } from '@/hooks/useOtherExpenses';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Player, AttendanceRecord, PaymentRecord, CancelledSession } from '@/types';
 
 interface ReportsViewProps {
@@ -10,11 +15,22 @@ interface ReportsViewProps {
   attendance: AttendanceRecord[];
   payments: PaymentRecord[];
   cancelledSessions?: CancelledSession[];
+  getTotalPaymentsByMonth: (month: string) => number;
 }
 
-export function ReportsView({ players, attendance, payments, cancelledSessions = [] }: ReportsViewProps) {
+export function ReportsView({ players, attendance, payments, cancelledSessions = [], getTotalPaymentsByMonth }: ReportsViewProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const monthStr = format(selectedMonth, 'yyyy-MM');
+  
+  const { canManagePayments } = useAuth();
+  const { getHallCost, setHallCost, isUpdating: isUpdatingHallCost } = useHallCosts();
+  const { getExpensesByMonth, getTotalExpensesByMonth, addExpense, deleteExpense, isAdding, isDeleting } = useOtherExpenses();
+
+  const [isEditingHallCost, setIsEditingHallCost] = useState(false);
+  const [hallCostInput, setHallCostInput] = useState('');
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [newExpenseDesc, setNewExpenseDesc] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
   const sessions = useMemo(() => getTrainingSessions(selectedMonth), [selectedMonth]);
   
@@ -44,6 +60,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
         attendanceCount,
         totalSessions: activeSessions.length,
         paid: payment?.paid || false,
+        amount: payment?.amount || 0,
       };
     }).sort((a, b) => b.attendanceCount - a.attendanceCount);
   }, [players, attendance, payments, activeSessionDates, activeSessions.length, monthStr]);
@@ -53,8 +70,48 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
     ? Math.round(playerStats.reduce((sum, s) => sum + s.attendanceCount, 0) / playerStats.length)
     : 0;
 
+  // Financial data
+  const totalIncome = getTotalPaymentsByMonth(monthStr);
+  const hallCost = getHallCost(monthStr);
+  const otherExpenses = getExpensesByMonth(monthStr);
+  const totalOtherExpenses = getTotalExpensesByMonth(monthStr);
+  const monthlyBalance = totalIncome - hallCost - totalOtherExpenses;
+
+  // Calculate total cash balance (all months)
+  const allMonths = useMemo(() => {
+    const months = new Set<string>();
+    payments.forEach(p => months.add(p.month));
+    return Array.from(months);
+  }, [payments]);
+
+  const totalCashBalance = useMemo(() => {
+    let total = 0;
+    allMonths.forEach(month => {
+      const income = getTotalPaymentsByMonth(month);
+      const hall = getHallCost(month);
+      const other = getTotalExpensesByMonth(month);
+      total += income - hall - other;
+    });
+    return total;
+  }, [allMonths, getTotalPaymentsByMonth, getHallCost, getTotalExpensesByMonth]);
+
   const handlePrevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
+
+  const handleSaveHallCost = () => {
+    const amount = parseFloat(hallCostInput) || 1100;
+    setHallCost(monthStr, amount);
+    setIsEditingHallCost(false);
+  };
+
+  const handleAddExpense = () => {
+    if (newExpenseDesc.trim() && newExpenseAmount) {
+      addExpense(monthStr, newExpenseDesc.trim(), parseFloat(newExpenseAmount) || 0);
+      setNewExpenseDesc('');
+      setNewExpenseAmount('');
+      setIsAddingExpense(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-24">
@@ -64,6 +121,37 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
         </h1>
         <p className="text-muted-foreground mt-1">Raporty miesięczne</p>
       </header>
+
+      {/* Global cash balance */}
+      <div className={cn(
+        "glass-card rounded-2xl p-4 border-2",
+        totalCashBalance >= 0 ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"
+      )}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center",
+              totalCashBalance >= 0 ? "bg-success/20" : "bg-destructive/20"
+            )}>
+              <PiggyBank className={cn("w-6 h-6", totalCashBalance >= 0 ? "text-success" : "text-destructive")} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Stan kasy</p>
+              <p className={cn(
+                "text-2xl font-bold",
+                totalCashBalance >= 0 ? "text-success" : "text-destructive"
+              )}>
+                {totalCashBalance.toFixed(0)} zł
+              </p>
+            </div>
+          </div>
+          {totalCashBalance >= 0 ? (
+            <TrendingUp className="w-8 h-8 text-success/50" />
+          ) : (
+            <TrendingDown className="w-8 h-8 text-destructive/50" />
+          )}
+        </div>
+      </div>
 
       <div className="glass-card rounded-2xl p-4">
         <div className="flex items-center justify-between">
@@ -91,6 +179,168 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
           </button>
         </div>
       </div>
+
+      {/* Financial summary */}
+      <section>
+        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+          <Wallet className="w-5 h-5 text-primary" />
+          Podsumowanie finansowe
+        </h2>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="glass-card rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-success mb-2">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-sm font-medium">Wpływy</span>
+            </div>
+            <p className="text-2xl font-bold text-success">{totalIncome.toFixed(0)} zł</p>
+            <p className="text-sm text-muted-foreground">{totalPaid} osób zapłaciło</p>
+          </div>
+          
+          <div className="glass-card rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-destructive mb-2">
+              <Building2 className="w-5 h-5" />
+              <span className="text-sm font-medium">Koszt hali</span>
+            </div>
+            {isEditingHallCost ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={hallCostInput}
+                  onChange={(e) => setHallCostInput(e.target.value)}
+                  className="h-8 text-sm"
+                  placeholder="1100"
+                />
+                <Button size="sm" onClick={handleSaveHallCost} disabled={isUpdatingHallCost}>
+                  OK
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-destructive">{hallCost.toFixed(0)} zł</p>
+                {canManagePayments && (
+                  <button 
+                    onClick={() => {
+                      setHallCostInput(hallCost.toString());
+                      setIsEditingHallCost(true);
+                    }}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Zmień
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="glass-card rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-orange-500 mb-2">
+              <Receipt className="w-5 h-5" />
+              <span className="text-sm font-medium">Inne koszty</span>
+            </div>
+            <p className="text-2xl font-bold text-orange-500">{totalOtherExpenses.toFixed(0)} zł</p>
+            <p className="text-sm text-muted-foreground">{otherExpenses.length} pozycji</p>
+          </div>
+          
+          <div className={cn(
+            "glass-card rounded-2xl p-4",
+            monthlyBalance >= 0 ? "ring-2 ring-success/30" : "ring-2 ring-destructive/30"
+          )}>
+            <div className={cn(
+              "flex items-center gap-2 mb-2",
+              monthlyBalance >= 0 ? "text-success" : "text-destructive"
+            )}>
+              <PiggyBank className="w-5 h-5" />
+              <span className="text-sm font-medium">Bilans</span>
+            </div>
+            <p className={cn(
+              "text-2xl font-bold",
+              monthlyBalance >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {monthlyBalance >= 0 ? '+' : ''}{monthlyBalance.toFixed(0)} zł
+            </p>
+            <p className="text-sm text-muted-foreground">za miesiąc</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Other expenses section */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-orange-500" />
+            Inne wydatki
+          </h2>
+          {canManagePayments && !isAddingExpense && (
+            <Button size="sm" variant="outline" onClick={() => setIsAddingExpense(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Dodaj
+            </Button>
+          )}
+        </div>
+
+        {isAddingExpense && (
+          <div className="glass-card rounded-2xl p-4 mb-4">
+            <div className="space-y-3">
+              <Input
+                placeholder="Opis wydatku (np. Piłki treningowe)"
+                value={newExpenseDesc}
+                onChange={(e) => setNewExpenseDesc(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Kwota"
+                    value={newExpenseAmount}
+                    onChange={(e) => setNewExpenseAmount(e.target.value)}
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    zł
+                  </span>
+                </div>
+                <Button onClick={handleAddExpense} disabled={isAdding || !newExpenseDesc.trim() || !newExpenseAmount}>
+                  Dodaj
+                </Button>
+                <Button variant="outline" onClick={() => setIsAddingExpense(false)}>
+                  Anuluj
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {otherExpenses.length === 0 ? (
+          <div className="glass-card rounded-2xl p-4 text-center text-muted-foreground">
+            Brak dodatkowych wydatków w tym miesiącu
+          </div>
+        ) : (
+          <div className="glass-card rounded-2xl p-4">
+            <div className="space-y-2">
+              {otherExpenses.map(expense => (
+                <div key={expense.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                  <span className="font-medium text-foreground">{expense.description}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-destructive font-semibold">-{expense.amount.toFixed(0)} zł</span>
+                    {canManagePayments && (
+                      <button 
+                        onClick={() => deleteExpense(expense.id)}
+                        disabled={isDeleting}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="glass-card rounded-2xl p-4">
@@ -173,7 +423,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
                   </tr>
                 </thead>
                 <tbody>
-                  {playerStats.map(({ player, attendanceCount, totalSessions, paid }) => (
+                  {playerStats.map(({ player, attendanceCount, totalSessions, paid, amount }) => (
                     <tr key={player.id} className="border-b border-border/50 last:border-0">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
@@ -196,7 +446,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
                             ? "bg-success/20 text-success" 
                             : "bg-destructive/20 text-destructive"
                         )}>
-                          {paid ? 'Tak' : 'Nie'}
+                          {paid ? `${amount.toFixed(0)} zł` : 'Nie'}
                         </span>
                       </td>
                     </tr>
