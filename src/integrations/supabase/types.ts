@@ -73,8 +73,60 @@ export type Database = {
         }
         Relationships: []
       }
+      hall_costs: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          month: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month?: string
+        }
+        Relationships: []
+      }
+      other_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          month: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          month: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          month?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
+          amount: number
           created_at: string
           id: string
           is_paid: boolean
@@ -83,6 +135,7 @@ export type Database = {
           player_id: string
         }
         Insert: {
+          amount?: number
           created_at?: string
           id?: string
           is_paid?: boolean
@@ -91,6 +144,7 @@ export type Database = {
           player_id: string
         }
         Update: {
+          amount?: number
           created_at?: string
           id?: string
           is_paid?: boolean

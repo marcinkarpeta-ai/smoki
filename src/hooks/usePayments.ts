@@ -7,6 +7,7 @@ export interface PaymentRecord {
   month: string;
   playerId: string;
   paid: boolean;
+  amount: number;
 }
 
 export function usePayments() {
@@ -26,13 +27,14 @@ export function usePayments() {
       return data.map(p => ({
         month: p.month,
         playerId: p.player_id,
-        paid: p.is_paid
+        paid: p.is_paid,
+        amount: Number(p.amount)
       })) as PaymentRecord[];
     }
   });
 
   const togglePaymentMutation = useMutation({
-    mutationFn: async ({ playerId, month }: { playerId: string; month: string }) => {
+    mutationFn: async ({ playerId, month, amount }: { playerId: string; month: string; amount: number }) => {
       // Check if record exists
       const { data: existing } = await supabase
         .from('payments')
@@ -42,24 +44,39 @@ export function usePayments() {
         .maybeSingle();
 
       if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('payments')
-          .update({ 
-            is_paid: !existing.is_paid,
-            marked_by: user?.id 
-          })
-          .eq('id', existing.id);
+        // Update existing record - toggle off (delete)
+        if (existing.is_paid) {
+          const { error } = await supabase
+            .from('payments')
+            .update({ 
+              is_paid: false,
+              marked_by: user?.id 
+            })
+            .eq('id', existing.id);
 
-        if (error) throw error;
+          if (error) throw error;
+        } else {
+          // Toggle on with amount
+          const { error } = await supabase
+            .from('payments')
+            .update({ 
+              is_paid: true,
+              amount,
+              marked_by: user?.id 
+            })
+            .eq('id', existing.id);
+
+          if (error) throw error;
+        }
       } else {
-        // Insert new record
+        // Insert new record with amount
         const { error } = await supabase
           .from('payments')
           .insert({
             player_id: playerId,
             month: month,
             is_paid: true,
+            amount,
             marked_by: user?.id
           });
 
@@ -78,12 +95,25 @@ export function usePayments() {
     }
   });
 
+  const getPaymentAmount = (playerId: string, month: string): number => {
+    const payment = payments.find(p => p.playerId === playerId && p.month === month);
+    return payment?.amount ?? 150;
+  };
+
+  const getTotalPaymentsByMonth = (month: string): number => {
+    return payments
+      .filter(p => p.month === month && p.paid)
+      .reduce((sum, p) => sum + p.amount, 0);
+  };
+
   return {
     payments,
     isLoading,
     error,
-    togglePayment: (playerId: string, month: string) => 
-      togglePaymentMutation.mutate({ playerId, month }),
+    getPaymentAmount,
+    getTotalPaymentsByMonth,
+    togglePayment: (playerId: string, month: string, amount: number = 150) => 
+      togglePaymentMutation.mutate({ playerId, month, amount }),
     isToggling: togglePaymentMutation.isPending
   };
 }

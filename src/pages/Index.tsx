@@ -21,7 +21,7 @@ const Index = () => {
   
   const { players, addPlayer, deletePlayer } = usePlayers();
   const { attendance, toggleAttendance } = useAttendance();
-  const { payments, togglePayment } = usePayments();
+  const { payments, togglePayment, getPaymentAmount, getTotalPaymentsByMonth } = usePayments();
   const { cancelledSessions, toggleCancel } = useCancelledSessions();
   
   const cancelledDates = cancelledSessions.map(s => s.sessionDate);
@@ -65,9 +65,9 @@ const Index = () => {
     }
   };
 
-  const handlePaymentToggle = (playerId: string, month: string) => {
+  const handlePaymentToggle = (playerId: string, month: string, amount: number) => {
     if (canManagePayments) {
-      togglePayment(playerId, month);
+      togglePayment(playerId, month, amount);
     }
   };
 
@@ -98,6 +98,7 @@ const Index = () => {
             isAdmin={isAdmin}
             cancelledDates={cancelledDates}
             onCancelToggle={toggleCancel}
+            getPaymentAmount={getPaymentAmount}
           />
         )}
         
@@ -107,6 +108,7 @@ const Index = () => {
             attendance={attendance}
             payments={payments}
             cancelledSessions={cancelledSessions}
+            getTotalPaymentsByMonth={getTotalPaymentsByMonth}
           />
         )}
         

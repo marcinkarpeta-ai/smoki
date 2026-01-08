@@ -15,6 +15,23 @@ export interface PaymentRecord {
   month: string; // Format: YYYY-MM
   playerId: string;
   paid: boolean;
+  amount: number;
+}
+
+export interface HallCost {
+  id: string;
+  month: string;
+  amount: number;
+  createdBy: string | null;
+}
+
+export interface OtherExpense {
+  id: string;
+  month: string;
+  description: string;
+  amount: number;
+  createdBy: string | null;
+  createdAt: string;
 }
 
 export interface TrainingSession {
