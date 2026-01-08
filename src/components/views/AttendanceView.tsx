@@ -56,8 +56,23 @@ export function AttendanceView({
     return map;
   }, [payments, currentMonth]);
 
+  // Players who had at least one attendance in the current month
+  const playersWithAttendance = useMemo(() => {
+    const monthStart = currentMonth + '-01';
+    const monthEnd = currentMonth + '-31';
+    
+    return players.filter(player => {
+      return attendance.some(a => 
+        a.playerId === player.id && 
+        a.present && 
+        a.date >= monthStart && 
+        a.date <= monthEnd
+      );
+    });
+  }, [players, attendance, currentMonth]);
+
   const presentCount = Array.from(attendanceMap.values()).filter(Boolean).length;
-  const paidCount = Array.from(paymentMap.values()).filter(Boolean).length;
+  const paidCount = playersWithAttendance.filter(p => paymentMap.get(p.id)).length;
 
   return (
     <div className="space-y-6 pb-24">
@@ -129,13 +144,19 @@ export function AttendanceView({
             Płatności - {formatMonthPolish(currentMonth)}
           </h2>
           <span className="text-sm font-medium text-success bg-success/10 px-3 py-1 rounded-full">
-            {paidCount}/{players.length}
+            {paidCount}/{playersWithAttendance.length}
           </span>
         </div>
 
-        {players.length > 0 && (
+        {playersWithAttendance.length === 0 ? (
+          <div className="glass-card rounded-2xl p-8 text-center">
+            <p className="text-muted-foreground">
+              Brak zawodników z obecnością w tym miesiącu.
+            </p>
+          </div>
+        ) : (
           <div className="space-y-3">
-            {players.map((player) => (
+            {playersWithAttendance.map((player) => (
               <PaymentToggle
                 key={player.id}
                 player={player}

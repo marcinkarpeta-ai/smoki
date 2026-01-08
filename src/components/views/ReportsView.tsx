@@ -62,11 +62,13 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
         totalSessions: activeSessions.length,
         paid: payment?.paid || false,
         amount: payment?.amount || 0,
+        hasAttendance: attendanceCount > 0,
       };
     }).sort((a, b) => b.attendanceCount - a.attendanceCount);
   }, [players, attendance, payments, activeSessionDates, activeSessions.length, monthStr]);
 
-  const totalPaid = playerStats.filter(s => s.paid).length;
+  const playersWithAttendanceCount = playerStats.filter(s => s.hasAttendance).length;
+  const totalPaid = playerStats.filter(s => s.hasAttendance && s.paid).length;
   const avgAttendance = playerStats.length > 0 
     ? Math.round(playerStats.reduce((sum, s) => sum + s.attendanceCount, 0) / playerStats.length)
     : 0;
@@ -374,7 +376,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
             <span className="text-sm font-medium">Zapłacone</span>
           </div>
           <p className="text-3xl font-bold text-foreground">{totalPaid}</p>
-          <p className="text-sm text-muted-foreground">z {players.length} osób</p>
+          <p className="text-sm text-muted-foreground">z {playersWithAttendanceCount} osób</p>
         </div>
       </div>
 
@@ -419,7 +421,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
                   </tr>
                 </thead>
                 <tbody>
-                  {playerStats.map(({ player, attendanceCount, totalSessions, paid, amount }) => (
+                  {playerStats.map(({ player, attendanceCount, totalSessions, paid, amount, hasAttendance }) => (
                     <tr key={player.id} className="border-b border-border/50 last:border-0">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
@@ -436,14 +438,20 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
                         <span className="text-muted-foreground">/{totalSessions}</span>
                       </td>
                       <td className="p-4 text-center">
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-sm font-medium",
-                          paid 
-                            ? "bg-success/20 text-success" 
-                            : "bg-destructive/20 text-destructive"
-                        )}>
-                          {paid ? `${amount.toFixed(0)} zł` : 'Nie'}
-                        </span>
+                        {hasAttendance ? (
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-sm font-medium",
+                            paid 
+                              ? "bg-success/20 text-success" 
+                              : "bg-destructive/20 text-destructive"
+                          )}>
+                            {paid ? `${amount.toFixed(0)} zł` : 'Nie'}
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-sm font-medium bg-muted text-muted-foreground">
+                            Brak obecności
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
