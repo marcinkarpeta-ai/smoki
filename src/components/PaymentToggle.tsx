@@ -13,9 +13,9 @@ interface PaymentToggleProps {
   disabled?: boolean;
 }
 
-export function PaymentToggle({ player, paid, amount, onToggle, disabled = false }: PaymentToggleProps) {
+export function PaymentToggle({ player, paid, amount = 150, onToggle, disabled = false }: PaymentToggleProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [inputAmount, setInputAmount] = useState(amount.toString());
+  const [inputAmount, setInputAmount] = useState((amount || 150).toString());
 
   const handleConfirm = () => {
     const parsedAmount = parseFloat(inputAmount) || 150;
