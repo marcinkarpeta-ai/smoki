@@ -80,12 +80,41 @@ export function useUsers() {
     }
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: 'Użytkownik usunięty',
+        description: 'Użytkownik został pomyślnie usunięty.'
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd usuwania',
+        description: error.message
+      });
+    }
+  });
+
   return {
     users,
     isLoading,
     error,
     updateRole: (userId: string, role: AppRole | null) => 
       updateRoleMutation.mutate({ userId, role }),
-    isUpdating: updateRoleMutation.isPending
+    isUpdating: updateRoleMutation.isPending,
+    deleteUser: (userId: string) => deleteUserMutation.mutate(userId),
+    isDeleting: deleteUserMutation.isPending
   };
 }

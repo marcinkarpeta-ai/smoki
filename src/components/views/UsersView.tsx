@@ -8,7 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -33,8 +44,8 @@ const roleColors: Record<AppRole, string> = {
 };
 
 export function UsersView() {
-  const { isAdmin } = useAuth();
-  const { users, isLoading, updateRole, isUpdating } = useUsers();
+  const { isAdmin, user: currentUser } = useAuth();
+  const { users, isLoading, updateRole, isUpdating, deleteUser, isDeleting } = useUsers();
   const { createUser, isCreating } = useCreateUser();
   
   const [newEmail, setNewEmail] = useState('');
@@ -209,24 +220,64 @@ export function UsersView() {
                             {roleLabels[user.role]}
                           </Badge>
                         )}
-                        <Select
-                          value={user.role || 'none'}
-                          onValueChange={(value) => {
-                            const newRole = value === 'none' ? null : value as AppRole;
-                            updateRole(user.id, newRole);
-                          }}
-                          disabled={isUpdating}
-                        >
-                          <SelectTrigger className="w-[160px]">
-                            <SelectValue placeholder="Wybierz rolę" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Brak roli</SelectItem>
-                            <SelectItem value="admin">Administrator</SelectItem>
-                            <SelectItem value="attendance_manager">Menedżer obecności</SelectItem>
-                            <SelectItem value="payment_manager">Menedżer płatności</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={user.role || 'none'}
+                            onValueChange={(value) => {
+                              const newRole = value === 'none' ? null : value as AppRole;
+                              updateRole(user.id, newRole);
+                            }}
+                            disabled={isUpdating || isDeleting}
+                          >
+                            <SelectTrigger className="w-[160px]">
+                              <SelectValue placeholder="Wybierz rolę" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Brak roli</SelectItem>
+                              <SelectItem value="admin">Administrator</SelectItem>
+                              <SelectItem value="attendance_manager">Menedżer obecności</SelectItem>
+                              <SelectItem value="payment_manager">Menedżer płatności</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Delete button - disabled for current user */}
+                          {user.id !== currentUser?.id && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Czy na pewno chcesz usunąć użytkownika?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Użytkownik <strong>{user.email}</strong> zostanie trwale usunięty.
+                                    Ta operacja jest nieodwracalna.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteUser(user.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Usuń użytkownika
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
