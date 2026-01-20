@@ -29,22 +29,27 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Get the current user
-    const { data: { user: currentUser }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !currentUser) {
-      console.error('Error getting user:', userError);
+    // Get user claims from token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('Error getting claims:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Nieautoryzowany dostęp' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const currentUserId = claimsData.claims.sub;
+    console.log('Current user ID:', currentUserId);
+
     // Create admin client to check role
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if current user is an admin
     const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
-      _user_id: currentUser.id,
+      _user_id: currentUserId,
       _role: 'admin'
     });
 
