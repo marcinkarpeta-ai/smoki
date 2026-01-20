@@ -17,7 +17,9 @@ interface AuthContextType {
   hasRole: (role: AppRole) => boolean;
   canManageAttendance: boolean;
   canManagePayments: boolean;
-  canManagePlayers: boolean;
+  canAddPlayers: boolean;
+  canDeletePlayers: boolean;
+  canViewPlayersTab: boolean;
   canManageUsers: boolean;
   isAdmin: boolean;
 }
@@ -120,7 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === 'admin';
   const canManageAttendance = role === 'admin' || role === 'attendance_manager';
   const canManagePayments = role === 'admin' || role === 'payment_manager';
-  const canManagePlayers = role === 'admin';
+  const canAddPlayers = role === 'admin' || role === 'attendance_manager';
+  const canDeletePlayers = role === 'admin';
+  const canViewPlayersTab = role === 'admin' || role === 'attendance_manager';
   const canManageUsers = role === 'admin';
 
   return (
@@ -136,7 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasRole,
       canManageAttendance,
       canManagePayments,
-      canManagePlayers,
+      canAddPlayers,
+      canDeletePlayers,
+      canViewPlayersTab,
       canManageUsers,
       isAdmin
     }}>

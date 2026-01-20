@@ -16,7 +16,7 @@ export type Tab = 'attendance' | 'reports' | 'players' | 'users';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, canManagePlayers, canManageUsers, canManageAttendance, canManagePayments, isAdmin } = useAuth();
+  const { user, isLoading: authLoading, canAddPlayers, canDeletePlayers, canViewPlayersTab, canManageUsers, canManageAttendance, canManagePayments, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('attendance');
   
   const { players, addPlayer, deletePlayer } = usePlayers();
@@ -39,13 +39,13 @@ const Index = () => {
 
   // Reset tab if user doesn't have permission
   useEffect(() => {
-    if (activeTab === 'players' && !canManagePlayers) {
+    if (activeTab === 'players' && !canViewPlayersTab) {
       setActiveTab('attendance');
     }
     if (activeTab === 'users' && !canManageUsers) {
       setActiveTab('attendance');
     }
-  }, [activeTab, canManagePlayers, canManageUsers]);
+  }, [activeTab, canViewPlayersTab, canManageUsers]);
 
   // Reset scroll on tab change
   useEffect(() => {
@@ -77,13 +77,13 @@ const Index = () => {
   };
 
   const handleAddPlayer = (firstName: string, lastName: string) => {
-    if (canManagePlayers) {
+    if (canAddPlayers) {
       addPlayer(firstName, lastName);
     }
   };
 
   const handleDeletePlayer = (id: string) => {
-    if (canManagePlayers) {
+    if (canDeletePlayers) {
       deletePlayer(id);
     }
   };
@@ -117,11 +117,13 @@ const Index = () => {
           />
         )}
         
-        {activeTab === 'players' && canManagePlayers && (
+        {activeTab === 'players' && canViewPlayersTab && (
           <PlayersView
             players={sortedPlayers}
             onAddPlayer={handleAddPlayer}
             onDeletePlayer={handleDeletePlayer}
+            canAdd={canAddPlayers}
+            canDelete={canDeletePlayers}
           />
         )}
 
@@ -133,7 +135,7 @@ const Index = () => {
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={setActiveTab}
-        showPlayers={canManagePlayers}
+        showPlayers={canViewPlayersTab}
         showUsers={canManageUsers}
       />
     </div>
