@@ -8,14 +8,16 @@ interface PlayersViewProps {
   players: Player[];
   onAddPlayer: (firstName: string, lastName: string) => void;
   onDeletePlayer: (id: string) => void;
+  canAdd?: boolean;
+  canDelete?: boolean;
 }
 
-export function PlayersView({ players, onAddPlayer, onDeletePlayer }: PlayersViewProps) {
+export function PlayersView({ players, onAddPlayer, onDeletePlayer, canAdd = true, canDelete = true }: PlayersViewProps) {
   return (
     <div className="space-y-6 pb-24">
       <PageHeader subtitle="Stowarzyszenie Miłośników Koszykówki" />
 
-      <PlayerForm onAdd={onAddPlayer} />
+      {canAdd && <PlayerForm onAdd={onAddPlayer} />}
 
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -44,6 +46,7 @@ export function PlayersView({ players, onAddPlayer, onDeletePlayer }: PlayersVie
                 key={player.id}
                 player={player}
                 onDelete={() => onDeletePlayer(player.id)}
+                canDelete={canDelete}
               />
             ))}
           </div>

@@ -7,9 +7,10 @@ interface PlayerCardProps {
   onDelete: () => void;
   attendanceCount?: number;
   paid?: boolean;
+  canDelete?: boolean;
 }
 
-export function PlayerCard({ player, onDelete, attendanceCount, paid }: PlayerCardProps) {
+export function PlayerCard({ player, onDelete, attendanceCount, paid, canDelete = true }: PlayerCardProps) {
   return (
     <div className="glass-card rounded-xl p-4 flex items-center justify-between gap-4 animate-slide-up">
       <div className="flex items-center gap-3">
@@ -34,12 +35,14 @@ export function PlayerCard({ player, onDelete, attendanceCount, paid }: PlayerCa
         </div>
       </div>
       
-      <button
-        onClick={onDelete}
-        className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center tap-target hover:bg-destructive/20 transition-colors"
-      >
-        <Trash2 className="w-5 h-5" />
-      </button>
+      {canDelete && (
+        <button
+          onClick={onDelete}
+          className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center tap-target hover:bg-destructive/20 transition-colors"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
