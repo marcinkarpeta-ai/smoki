@@ -77,12 +77,12 @@ export function AttendanceView({
   }, [payments, paymentMonth]);
 
   const playersWithAttendance = useMemo(() => {
-    const monthStart = currentMonth + '-01';
-    const monthEnd = currentMonth + '-31';
+    const monthStart = paymentMonth + '-01';
+    const monthEnd = paymentMonth + '-31';
     return players.filter(player =>
       attendance.some(a => a.playerId === player.id && a.present && a.date >= monthStart && a.date <= monthEnd)
     );
-  }, [players, attendance, currentMonth]);
+  }, [players, attendance, paymentMonth]);
 
   const playersWithoutAttendance = useMemo(() => {
     const withAttendanceIds = new Set(playersWithAttendance.map(p => p.id));
