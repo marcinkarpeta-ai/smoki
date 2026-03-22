@@ -1,46 +1,41 @@
 import { useState, useMemo } from 'react';
-import { Users, Ban, AlertTriangle } from 'lucide-react';
-import { DateSelector } from '@/components/DateSelector';
-import { AttendanceCard } from '@/components/AttendanceCard';
-import { getNextTrainingDate } from '@/utils/dateUtils';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Wallet, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PaymentToggle } from '@/components/PaymentToggle';
+import { getCurrentMonth, formatMonthPolish } from '@/utils/dateUtils';
 import { PageHeader } from '@/components/PageHeader';
-import type { Player, AttendanceRecord } from '@/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { addMonths, subMonths, format } from 'date-fns';
+import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
-interface AttendanceViewProps {
+interface PaymentsViewProps {
   players: Player[];
   attendance: AttendanceRecord[];
-  onAttendanceToggle: (playerId: string, date: string) => void;
-  canEditAttendance?: boolean;
-  isAdmin?: boolean;
-  cancelledDates?: string[];
-  onCancelToggle?: (date: string) => void;
+  payments: PaymentRecord[];
+  onPaymentToggle: (playerId: string, month: string, amount: number) => void;
+  onSplitPayment?: (playerId: string, month: string, currentAmount: number, nextMonthAmount: number) => void;
+  canEditPayments?: boolean;
+  getPaymentAmount: (playerId: string, month: string) => number;
 }
 
-export function AttendanceView({ 
-  players, 
-  attendance, 
-  payments, 
-  onAttendanceToggle, 
+export function PaymentsView({
+  players,
+  attendance,
+  payments,
   onPaymentToggle,
   onSplitPayment,
-  canEditAttendance = false,
   canEditPayments = false,
-  isAdmin = false,
-  cancelledDates = [],
-  onCancelToggle,
   getPaymentAmount
-}: AttendanceViewProps) {
-  const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
-  const [advanceOpen, setAdvanceOpen] = useState(false);
+}: PaymentsViewProps) {
   const currentMonth = getCurrentMonth();
   const [paymentMonth, setPaymentMonth] = useState(currentMonth);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [advanceOpen, setAdvanceOpen] = useState(false);
 
   const maxMonth = format(addMonths(new Date(), 2), 'yyyy-MM');
   const minMonth = '2026-01';
 
-  // Generate list of months for picker
   const availableMonths = useMemo(() => {
     const months: string[] = [];
     let current = new Date(minMonth + '-01');
@@ -61,16 +56,6 @@ export function AttendanceView({
     const next = format(addMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
     if (next <= maxMonth) setPaymentMonth(next);
   };
-
-  const isCancelled = cancelledDates.includes(selectedDate);
-
-  const attendanceMap = useMemo(() => {
-    const map = new Map<string, boolean>();
-    attendance
-      .filter(a => a.date === selectedDate)
-      .forEach(a => map.set(a.playerId, a.present));
-    return map;
-  }, [attendance, selectedDate]);
 
   const paymentMap = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -93,74 +78,12 @@ export function AttendanceView({
     return players.filter(p => !withAttendanceIds.has(p.id));
   }, [players, playersWithAttendance]);
 
-  // Players without attendance but with a paid record (paid in advance)
   const advancePaidCount = playersWithoutAttendance.filter(p => paymentMap.get(p.id)).length;
-
-  const presentCount = Array.from(attendanceMap.values()).filter(Boolean).length;
   const paidCount = playersWithAttendance.filter(p => paymentMap.get(p.id)).length;
 
   return (
     <div className="space-y-6 pb-24">
-      <PageHeader subtitle="Panel obecności" />
-
-      <DateSelector 
-        selectedDate={selectedDate} 
-        onDateChange={setSelectedDate}
-        cancelledDates={cancelledDates}
-      />
-
-      {isCancelled && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-4 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
-          <div>
-            <p className="font-semibold text-destructive">Trening odwołany</p>
-            <p className="text-sm text-destructive/80">Brak dostępu do hali</p>
-          </div>
-        </div>
-      )}
-
-      {isAdmin && onCancelToggle && (
-        <Button
-          variant={isCancelled ? "outline" : "default"}
-          className={isCancelled ? "w-full" : "w-full gradient-primary"}
-          onClick={() => onCancelToggle(selectedDate)}
-        >
-          <Ban className="w-4 h-4 mr-2" />
-          {isCancelled ? 'Przywróć trening' : 'Odwołaj trening'}
-        </Button>
-      )}
-
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            Obecność
-          </h2>
-          <span className="text-sm font-medium text-success bg-success/10 px-3 py-1 rounded-full">
-            {presentCount}/{players.length}
-          </span>
-        </div>
-
-        {players.length === 0 ? (
-          <div className="glass-card rounded-2xl p-8 text-center">
-            <p className="text-muted-foreground">
-              Brak zawodników. Dodaj pierwszego zawodnika w zakładce "Zawodnicy".
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {players.map((player) => (
-              <AttendanceCard
-                key={player.id}
-                player={player}
-                present={attendanceMap.get(player.id) || false}
-                onToggle={() => onAttendanceToggle(player.id, selectedDate)}
-                disabled={!canEditAttendance || isCancelled}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      <PageHeader subtitle="Panel płatności" />
 
       <section>
         <div className="flex items-center justify-between mb-4">
