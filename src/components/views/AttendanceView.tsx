@@ -8,6 +8,7 @@ import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { addMonths, subMonths, format } from 'date-fns';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
