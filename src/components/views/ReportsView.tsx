@@ -26,7 +26,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
   const monthStr = format(selectedMonth, 'yyyy-MM');
   
   const { canManagePayments } = useAuth();
-  const { getHallCost, setHallCost, isUpdating: isUpdatingHallCost } = useHallCosts();
+  const { getHallCost, hasHallCost, setHallCost, isUpdating: isUpdatingHallCost } = useHallCosts();
   const { getExpensesByMonth, getTotalExpensesByMonth, addExpense, deleteExpense, isAdding, isDeleting } = useOtherExpenses();
 
   const [isEditingHallCost, setIsEditingHallCost] = useState(false);
@@ -108,7 +108,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
 
   const handleSaveHallCost = () => {
-    const amount = parseFloat(hallCostInput) || 1100;
+    const amount = parseFloat(hallCostInput) || 0;
     setHallCost(monthStr, amount);
     setIsEditingHallCost(false);
   };
@@ -222,16 +222,20 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
               </div>
             ) : (
               <>
-                <p className="text-2xl font-bold text-destructive">{hallCost.toFixed(0)} zł</p>
+                {hasHallCost(monthStr) ? (
+                  <p className="text-2xl font-bold text-destructive">{hallCost.toFixed(0)} zł</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Nie wprowadzono</p>
+                )}
                 {canManagePayments && (
                   <button 
                     onClick={() => {
-                      setHallCostInput(hallCost.toString());
+                      setHallCostInput(hasHallCost(monthStr) ? hallCost.toString() : '');
                       setIsEditingHallCost(true);
                     }}
                     className="text-sm text-primary hover:underline"
                   >
-                    Zmień
+                    {hasHallCost(monthStr) ? 'Zmień' : 'Wprowadź'}
                   </button>
                 )}
               </>
