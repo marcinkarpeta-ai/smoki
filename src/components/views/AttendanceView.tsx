@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { Users, Wallet, Ban, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Users, Wallet, Ban, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateSelector } from '@/components/DateSelector';
 import { AttendanceCard } from '@/components/AttendanceCard';
 import { PaymentToggle } from '@/components/PaymentToggle';
@@ -8,6 +8,7 @@ import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { addMonths, subMonths, format } from 'date-fns';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
 interface AttendanceViewProps {
