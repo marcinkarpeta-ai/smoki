@@ -74,7 +74,11 @@ export function useHallCosts() {
 
   const getHallCost = (month: string): number => {
     const cost = hallCosts.find(h => h.month === month);
-    return cost?.amount ?? 1100;
+    return cost?.amount ?? 0;
+  };
+
+  const hasHallCost = (month: string): boolean => {
+    return hallCosts.some(h => h.month === month);
   };
 
   return {
