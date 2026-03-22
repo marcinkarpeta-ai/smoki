@@ -403,7 +403,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
       <section>
         <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
-          Szczegóły
+          Szczegóły - {formatMonthPolish(monthStr)}
         </h2>
 
         {playerStats.length === 0 ? (
@@ -462,6 +462,8 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
           </div>
         )}
       </section>
+
+      <PlayerPaymentHistory players={players} payments={payments} allMonths={allMonths} />
     </div>
   );
 }
