@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { AttendanceView } from '@/components/views/AttendanceView';
+import { PaymentsView } from '@/components/views/PaymentsView';
 import { ReportsView } from '@/components/views/ReportsView';
 import { PlayersView } from '@/components/views/PlayersView';
 import { UsersView } from '@/components/views/UsersView';
@@ -12,7 +13,7 @@ import { usePayments } from '@/hooks/usePayments';
 import { useCancelledSessions } from '@/hooks/useCancelledSessions';
 import { Loader2 } from 'lucide-react';
 
-export type Tab = 'attendance' | 'reports' | 'players' | 'users';
+export type Tab = 'attendance' | 'payments' | 'reports' | 'players' | 'users';
 
 const Index = () => {
   const navigate = useNavigate();
