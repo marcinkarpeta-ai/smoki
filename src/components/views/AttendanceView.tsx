@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { Users, Wallet, Ban, AlertTriangle, ChevronDown } from 'lucide-react';
 import { DateSelector } from '@/components/DateSelector';
 import { AttendanceCard } from '@/components/AttendanceCard';
