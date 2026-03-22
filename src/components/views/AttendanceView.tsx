@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { Users, Wallet, Ban, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Users, Wallet, Ban, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateSelector } from '@/components/DateSelector';
 import { AttendanceCard } from '@/components/AttendanceCard';
 import { PaymentToggle } from '@/components/PaymentToggle';
@@ -8,6 +8,7 @@ import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { addMonths, subMonths, format } from 'date-fns';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
 interface AttendanceViewProps {
@@ -42,6 +43,20 @@ export function AttendanceView({
   const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const currentMonth = getCurrentMonth();
+  const [paymentMonth, setPaymentMonth] = useState(currentMonth);
+
+  const maxMonth = format(addMonths(new Date(), 2), 'yyyy-MM');
+  const minMonth = '2024-01';
+
+  const handlePrevMonth = () => {
+    const prev = format(subMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
+    if (prev >= minMonth) setPaymentMonth(prev);
+  };
+
+  const handleNextMonth = () => {
+    const next = format(addMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
+    if (next <= maxMonth) setPaymentMonth(next);
+  };
 
   const isCancelled = cancelledDates.includes(selectedDate);
 
@@ -56,18 +71,18 @@ export function AttendanceView({
   const paymentMap = useMemo(() => {
     const map = new Map<string, boolean>();
     payments
-      .filter(p => p.month === currentMonth)
+      .filter(p => p.month === paymentMonth)
       .forEach(p => map.set(p.playerId, p.paid));
     return map;
-  }, [payments, currentMonth]);
+  }, [payments, paymentMonth]);
 
   const playersWithAttendance = useMemo(() => {
-    const monthStart = currentMonth + '-01';
-    const monthEnd = currentMonth + '-31';
+    const monthStart = paymentMonth + '-01';
+    const monthEnd = paymentMonth + '-31';
     return players.filter(player =>
       attendance.some(a => a.playerId === player.id && a.present && a.date >= monthStart && a.date <= monthEnd)
     );
-  }, [players, attendance, currentMonth]);
+  }, [players, attendance, paymentMonth]);
 
   const playersWithoutAttendance = useMemo(() => {
     const withAttendanceIds = new Set(playersWithAttendance.map(p => p.id));
@@ -145,10 +160,26 @@ export function AttendanceView({
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-primary" />
-            Płatności - {formatMonthPolish(currentMonth)}
-          </h2>
+            <button
+              onClick={handlePrevMonth}
+              disabled={paymentMonth <= minMonth}
+              className="p-1 rounded-lg hover:bg-muted/50 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground">
+              {formatMonthPolish(paymentMonth)}
+            </h2>
+            <button
+              onClick={handleNextMonth}
+              disabled={paymentMonth >= maxMonth}
+              className="p-1 rounded-lg hover:bg-muted/50 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+          </div>
           <span className="text-sm font-medium text-success bg-success/10 px-3 py-1 rounded-full">
             {paidCount}/{playersWithAttendance.length}
           </span>
@@ -167,9 +198,9 @@ export function AttendanceView({
                 key={player.id}
                 player={player}
                 paid={paymentMap.get(player.id) || false}
-                amount={getPaymentAmount(player.id, currentMonth)}
-                onToggle={(amount) => onPaymentToggle(player.id, currentMonth, amount)}
-                onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, currentMonth, cur, next) : undefined}
+                amount={getPaymentAmount(player.id, paymentMonth)}
+                onToggle={(amount) => onPaymentToggle(player.id, paymentMonth, amount)}
+                onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, paymentMonth, cur, next) : undefined}
                 disabled={!canEditPayments}
               />
             ))}
@@ -190,9 +221,9 @@ export function AttendanceView({
                   key={player.id}
                   player={player}
                   paid={paymentMap.get(player.id) || false}
-                  amount={getPaymentAmount(player.id, currentMonth)}
-                  onToggle={(amount) => onPaymentToggle(player.id, currentMonth, amount)}
-                  onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, currentMonth, cur, next) : undefined}
+                  amount={getPaymentAmount(player.id, paymentMonth)}
+                  onToggle={(amount) => onPaymentToggle(player.id, paymentMonth, amount)}
+                  onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, paymentMonth, cur, next) : undefined}
                   disabled={!canEditPayments}
                   variant="advance"
                 />
