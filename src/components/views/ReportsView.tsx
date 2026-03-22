@@ -100,7 +100,11 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
     return total;
   }, [allMonths, getTotalPaymentsByMonth, getHallCost, getTotalExpensesByMonth]);
 
-  const handlePrevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
+  const minReportMonth = new Date('2026-01-01');
+  const handlePrevMonth = () => {
+    const prev = subMonths(selectedMonth, 1);
+    if (prev >= minReportMonth) setSelectedMonth(prev);
+  };
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
 
   const handleSaveHallCost = () => {
@@ -157,7 +161,8 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
         <div className="flex items-center justify-between">
           <button
             onClick={handlePrevMonth}
-            className="w-12 h-12 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center tap-target transition-all"
+            disabled={selectedMonth <= minReportMonth}
+            className="w-12 h-12 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-30 flex items-center justify-center tap-target transition-all"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
