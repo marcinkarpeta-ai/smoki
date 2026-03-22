@@ -99,15 +99,22 @@ const Index = () => {
           <AttendanceView
             players={sortedPlayers}
             attendance={attendance}
-            payments={payments}
             onAttendanceToggle={handleAttendanceToggle}
-            onPaymentToggle={handlePaymentToggle}
-            onSplitPayment={handleSplitPayment}
             canEditAttendance={canManageAttendance}
-            canEditPayments={canManagePayments}
             isAdmin={isAdmin}
             cancelledDates={cancelledDates}
             onCancelToggle={toggleCancel}
+          />
+        )}
+
+        {activeTab === 'payments' && (
+          <PaymentsView
+            players={sortedPlayers}
+            attendance={attendance}
+            payments={payments}
+            onPaymentToggle={handlePaymentToggle}
+            onSplitPayment={handleSplitPayment}
+            canEditPayments={canManagePayments}
             getPaymentAmount={getPaymentAmount}
           />
         )}

@@ -16,6 +16,7 @@ export function BottomNav({ activeTab, onTabChange, showPlayers = false, showUse
 
   const tabs = [
     { id: 'attendance' as const, label: 'Obecność', icon: ClipboardCheck, show: true },
+    { id: 'payments' as const, label: 'Płatności', icon: Wallet, show: true },
     { id: 'reports' as const, label: 'Raporty', icon: BarChart3, show: true },
     { id: 'players' as const, label: 'Zawodnicy', icon: Users, show: showPlayers },
     { id: 'users' as const, label: 'Użytkownicy', icon: UserCog, show: showUsers },
