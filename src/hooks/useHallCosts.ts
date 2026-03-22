@@ -86,6 +86,7 @@ export function useHallCosts() {
     isLoading,
     error,
     getHallCost,
+    hasHallCost,
     setHallCost: (month: string, amount: number) => 
       setHallCostMutation.mutate({ month, amount }),
     isUpdating: setHallCostMutation.isPending
