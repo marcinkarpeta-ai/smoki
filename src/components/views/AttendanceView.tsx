@@ -221,9 +221,9 @@ export function AttendanceView({
                   key={player.id}
                   player={player}
                   paid={paymentMap.get(player.id) || false}
-                  amount={getPaymentAmount(player.id, currentMonth)}
-                  onToggle={(amount) => onPaymentToggle(player.id, currentMonth, amount)}
-                  onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, currentMonth, cur, next) : undefined}
+                  amount={getPaymentAmount(player.id, paymentMonth)}
+                  onToggle={(amount) => onPaymentToggle(player.id, paymentMonth, amount)}
+                  onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, paymentMonth, cur, next) : undefined}
                   disabled={!canEditPayments}
                   variant="advance"
                 />
