@@ -1,36 +1,27 @@
 
 
-# Plan: Nawigacja płatności między miesiącami
+# Plan: Stan kasy — tylko faktyczne dane
 
 ## Problem
 
-Sekcja płatności jest zablokowana na bieżący miesiąc (`getCurrentMonth()`). Nie można przejść do przyszłych miesięcy (np. kwiecień), żeby wpisać płatność z góry.
+`getHallCost()` zwraca domyślnie 1100 zł nawet gdy koszt hali nie został wpisany. To powoduje, że stan kasy odejmuje hipotetyczne koszty za miesiące, w których skarbnik jeszcze nic nie wprowadził — generując zamieszanie.
 
 ## Rozwiązanie
 
-Dodać nawigację miesiącami (strzałki lewo/prawo) w nagłówku sekcji płatności, analogicznie do nawigacji dat w sekcji obecności.
+Zmienić logikę tak, aby koszt hali był odejmowany **tylko gdy został jawnie wpisany** w danym miesiącu. Brak wpisu = 0 zł kosztu.
 
-```text
-┌─ Płatności ─────────────────────────┐
-│  ◀  Marzec 2026  ▶     3/5         │
-│  ...                                │
-└─────────────────────────────────────┘
-```
+## Zmiany
 
-- Nawigacja pozwala przechodzić od najstarszego miesiąca (w którym istnieje jakakolwiek obecność lub płatność) aż do **bieżący miesiąc + 2** (żeby można było opłacić przyszłe miesiące).
-- Domyślnie wybrany jest bieżący miesiąc.
+### `useHallCosts.ts`
+- Zmienić `getHallCost()`: zamiast `return cost?.amount ?? 1100` → `return cost?.amount ?? 0`
+- Dodać nową funkcję `hasHallCost(month): boolean` — zwraca `true` tylko gdy istnieje rekord dla danego miesiąca
 
-## Zmiany w kodzie
+### `ReportsView.tsx`
+- W widoku miesięcznym: jeśli `hasHallCost` jest `false`, wyświetlić placeholder "Nie wprowadzono" zamiast kwoty 1100 zł
+- `totalCashBalance`: bez zmian w logice — po zmianie `getHallCost` na domyślne 0, koszty będą odejmowane tylko gdy wpisane
+- `monthlyBalance`: analogicznie — pokaże bilans bez kosztu hali jeśli nie został wpisany
 
-### `AttendanceView.tsx`
-- Zamienić `const currentMonth = getCurrentMonth()` na `const [paymentMonth, setPaymentMonth] = useState(getCurrentMonth())`
-- Dodać funkcje `handlePrevMonth` / `handleNextMonth` (używając `addMonths` / `format` z `date-fns`)
-- Dodać przyciski nawigacji (strzałki) obok nagłówka "Płatności - {miesiąc}"
-- Przeliczyć `playersWithAttendance` i `playersWithoutAttendance` na podstawie `paymentMonth` (nie tylko bieżącego miesiąca)
-- Zaktualizować wszystkie odwołania do `currentMonth` → `paymentMonth`
-
-### Bez zmian
-- Baza danych — bez zmian
-- `usePayments.ts` — bez zmian (już obsługuje dowolny miesiąc)
-- `Index.tsx` — bez zmian (handlery przyjmują miesiąc jako parametr)
+### Efekt
+- Stan kasy = suma wpłat − suma **wpisanych** kosztów hali − suma **wpisanych** wydatków
+- Żadnych domyślnych odejmowań — skarbnik widzi dokładnie to, co zostało wprowadzone
 
