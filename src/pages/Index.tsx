@@ -21,12 +21,11 @@ const Index = () => {
   
   const { players, addPlayer, deletePlayer } = usePlayers();
   const { attendance, toggleAttendance } = useAttendance();
-  const { payments, togglePayment, getPaymentAmount, getTotalPaymentsByMonth } = usePayments();
+  const { payments, togglePayment, splitPayment, getPaymentAmount, getTotalPaymentsByMonth } = usePayments();
   const { cancelledSessions, toggleCancel } = useCancelledSessions();
   
   const cancelledDates = cancelledSessions.map(s => s.sessionDate);
 
-  // Sort players alphabetically by first name
   const sortedPlayers = [...players].sort((a, b) => 
     a.firstName.localeCompare(b.firstName, 'pl')
   );
@@ -37,7 +36,6 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Reset tab if user doesn't have permission
   useEffect(() => {
     if (activeTab === 'players' && !canViewPlayersTab) {
       setActiveTab('attendance');
@@ -47,7 +45,6 @@ const Index = () => {
     }
   }, [activeTab, canViewPlayersTab, canManageUsers]);
 
-  // Reset scroll on tab change
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [activeTab]);
@@ -76,6 +73,12 @@ const Index = () => {
     }
   };
 
+  const handleSplitPayment = (playerId: string, month: string, currentAmount: number, nextMonthAmount: number) => {
+    if (canManagePayments) {
+      splitPayment(playerId, month, currentAmount, nextMonthAmount);
+    }
+  };
+
   const handleAddPlayer = (firstName: string, lastName: string) => {
     if (canAddPlayers) {
       addPlayer(firstName, lastName);
@@ -98,6 +101,7 @@ const Index = () => {
             payments={payments}
             onAttendanceToggle={handleAttendanceToggle}
             onPaymentToggle={handlePaymentToggle}
+            onSplitPayment={handleSplitPayment}
             canEditAttendance={canManageAttendance}
             canEditPayments={canManagePayments}
             isAdmin={isAdmin}

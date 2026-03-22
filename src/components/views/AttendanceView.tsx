@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Users, Wallet, Ban, AlertTriangle } from 'lucide-react';
+import { Users, Wallet, Ban, AlertTriangle, ChevronDown } from 'lucide-react';
 import { DateSelector } from '@/components/DateSelector';
 import { AttendanceCard } from '@/components/AttendanceCard';
 import { PaymentToggle } from '@/components/PaymentToggle';
 import { getNextTrainingDate, getCurrentMonth, formatMonthPolish } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Player, AttendanceRecord, PaymentRecord } from '@/types';
 
 interface AttendanceViewProps {
@@ -14,6 +15,7 @@ interface AttendanceViewProps {
   payments: PaymentRecord[];
   onAttendanceToggle: (playerId: string, date: string) => void;
   onPaymentToggle: (playerId: string, month: string, amount: number) => void;
+  onSplitPayment?: (playerId: string, month: string, currentAmount: number, nextMonthAmount: number) => void;
   canEditAttendance?: boolean;
   canEditPayments?: boolean;
   isAdmin?: boolean;
@@ -28,6 +30,7 @@ export function AttendanceView({
   payments, 
   onAttendanceToggle, 
   onPaymentToggle,
+  onSplitPayment,
   canEditAttendance = false,
   canEditPayments = false,
   isAdmin = false,
@@ -36,6 +39,7 @@ export function AttendanceView({
   getPaymentAmount
 }: AttendanceViewProps) {
   const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
+  const [advanceOpen, setAdvanceOpen] = useState(false);
   const currentMonth = getCurrentMonth();
 
   const isCancelled = cancelledDates.includes(selectedDate);
@@ -56,20 +60,21 @@ export function AttendanceView({
     return map;
   }, [payments, currentMonth]);
 
-  // Players who had at least one attendance in the current month
   const playersWithAttendance = useMemo(() => {
     const monthStart = currentMonth + '-01';
     const monthEnd = currentMonth + '-31';
-    
-    return players.filter(player => {
-      return attendance.some(a => 
-        a.playerId === player.id && 
-        a.present && 
-        a.date >= monthStart && 
-        a.date <= monthEnd
-      );
-    });
+    return players.filter(player =>
+      attendance.some(a => a.playerId === player.id && a.present && a.date >= monthStart && a.date <= monthEnd)
+    );
   }, [players, attendance, currentMonth]);
+
+  const playersWithoutAttendance = useMemo(() => {
+    const withAttendanceIds = new Set(playersWithAttendance.map(p => p.id));
+    return players.filter(p => !withAttendanceIds.has(p.id));
+  }, [players, playersWithAttendance]);
+
+  // Players without attendance but with a paid record (paid in advance)
+  const advancePaidCount = playersWithoutAttendance.filter(p => paymentMap.get(p.id)).length;
 
   const presentCount = Array.from(attendanceMap.values()).filter(Boolean).length;
   const paidCount = playersWithAttendance.filter(p => paymentMap.get(p.id)).length;
@@ -163,10 +168,36 @@ export function AttendanceView({
                 paid={paymentMap.get(player.id) || false}
                 amount={getPaymentAmount(player.id, currentMonth)}
                 onToggle={(amount) => onPaymentToggle(player.id, currentMonth, amount)}
+                onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, currentMonth, cur, next) : undefined}
                 disabled={!canEditPayments}
               />
             ))}
           </div>
+        )}
+
+        {playersWithoutAttendance.length > 0 && canEditPayments && (
+          <Collapsible open={advanceOpen} onOpenChange={setAdvanceOpen} className="mt-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-xl bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
+              <span className="text-sm font-medium text-muted-foreground">
+                Opłać z góry ({playersWithoutAttendance.length - advancePaidCount} bez obecności)
+              </span>
+              <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", advanceOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 mt-3">
+              {playersWithoutAttendance.map((player) => (
+                <PaymentToggle
+                  key={player.id}
+                  player={player}
+                  paid={paymentMap.get(player.id) || false}
+                  amount={getPaymentAmount(player.id, currentMonth)}
+                  onToggle={(amount) => onPaymentToggle(player.id, currentMonth, amount)}
+                  onSplitPayment={onSplitPayment ? (cur, next) => onSplitPayment(player.id, currentMonth, cur, next) : undefined}
+                  disabled={!canEditPayments}
+                  variant="advance"
+                />
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </section>
     </div>
