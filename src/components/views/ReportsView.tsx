@@ -464,7 +464,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
         )}
       </section>
 
-      <PlayerPaymentHistory players={players} payments={payments} allMonths={allMonths} />
+      <PlayerPaymentHistory players={players} payments={payments} attendance={attendance} allMonths={allMonths} />
     </div>
   );
 }
