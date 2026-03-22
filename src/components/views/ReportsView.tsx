@@ -222,16 +222,20 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
               </div>
             ) : (
               <>
-                <p className="text-2xl font-bold text-destructive">{hallCost.toFixed(0)} zł</p>
+                {hasHallCost(monthStr) ? (
+                  <p className="text-2xl font-bold text-destructive">{hallCost.toFixed(0)} zł</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Nie wprowadzono</p>
+                )}
                 {canManagePayments && (
                   <button 
                     onClick={() => {
-                      setHallCostInput(hallCost.toString());
+                      setHallCostInput(hasHallCost(monthStr) ? hallCost.toString() : '');
                       setIsEditingHallCost(true);
                     }}
                     className="text-sm text-primary hover:underline"
                   >
-                    Zmień
+                    {hasHallCost(monthStr) ? 'Zmień' : 'Wprowadź'}
                   </button>
                 )}
               </>
