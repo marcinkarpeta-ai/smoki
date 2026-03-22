@@ -26,7 +26,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
   const monthStr = format(selectedMonth, 'yyyy-MM');
   
   const { canManagePayments } = useAuth();
-  const { getHallCost, setHallCost, isUpdating: isUpdatingHallCost } = useHallCosts();
+  const { getHallCost, hasHallCost, setHallCost, isUpdating: isUpdatingHallCost } = useHallCosts();
   const { getExpensesByMonth, getTotalExpensesByMonth, addExpense, deleteExpense, isAdding, isDeleting } = useOtherExpenses();
 
   const [isEditingHallCost, setIsEditingHallCost] = useState(false);
