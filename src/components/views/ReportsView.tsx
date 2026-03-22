@@ -6,6 +6,7 @@ import { getTrainingSessions, formatMonthPolish, formatDatePolish } from '@/util
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { PlayerPaymentHistory } from '@/components/PlayerPaymentHistory';
 import { useHallCosts } from '@/hooks/useHallCosts';
 import { useOtherExpenses } from '@/hooks/useOtherExpenses';
 import { useAuth } from '@/contexts/AuthContext';
