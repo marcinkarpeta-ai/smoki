@@ -183,9 +183,31 @@ export function AttendanceView({
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
-            <h2 className="text-lg font-bold text-foreground">
-              {formatMonthPolish(paymentMonth)}
-            </h2>
+            <Popover open={monthPickerOpen} onOpenChange={setMonthPickerOpen}>
+              <PopoverTrigger asChild>
+                <button className="text-lg font-bold text-foreground hover:text-primary transition-colors cursor-pointer">
+                  {formatMonthPolish(paymentMonth)}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2 max-h-64 overflow-y-auto pointer-events-auto" align="center">
+                <div className="space-y-0.5">
+                  {availableMonths.map(month => (
+                    <button
+                      key={month}
+                      onClick={() => { setPaymentMonth(month); setMonthPickerOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        month === paymentMonth
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-muted text-foreground"
+                      )}
+                    >
+                      {formatMonthPolish(month)}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <button
               onClick={handleNextMonth}
               disabled={paymentMonth >= maxMonth}
