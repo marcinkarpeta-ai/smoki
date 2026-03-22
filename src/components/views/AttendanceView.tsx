@@ -71,10 +71,10 @@ export function AttendanceView({
   const paymentMap = useMemo(() => {
     const map = new Map<string, boolean>();
     payments
-      .filter(p => p.month === currentMonth)
+      .filter(p => p.month === paymentMonth)
       .forEach(p => map.set(p.playerId, p.paid));
     return map;
-  }, [payments, currentMonth]);
+  }, [payments, paymentMonth]);
 
   const playersWithAttendance = useMemo(() => {
     const monthStart = currentMonth + '-01';
