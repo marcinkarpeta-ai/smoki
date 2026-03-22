@@ -45,9 +45,22 @@ export function AttendanceView({
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const currentMonth = getCurrentMonth();
   const [paymentMonth, setPaymentMonth] = useState(currentMonth);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   const maxMonth = format(addMonths(new Date(), 2), 'yyyy-MM');
   const minMonth = '2024-01';
+
+  // Generate list of months for picker
+  const availableMonths = useMemo(() => {
+    const months: string[] = [];
+    let current = new Date(minMonth + '-01');
+    const max = new Date(maxMonth + '-01');
+    while (current <= max) {
+      months.push(format(current, 'yyyy-MM'));
+      current = addMonths(current, 1);
+    }
+    return months;
+  }, [maxMonth]);
 
   const handlePrevMonth = () => {
     const prev = format(subMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
