@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck, Wallet, Building2, Receipt, PiggyBank, Plus, Trash2, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck, Wallet, Building2, Receipt, PiggyBank, Plus, Trash2, TrendingDown, User, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addMonths, subMonths } from 'date-fns';
 import { getTrainingSessions, formatMonthPolish, formatDatePolish } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { PlayerPaymentHistory } from '@/components/PlayerPaymentHistory';
 import { useHallCosts } from '@/hooks/useHallCosts';
 import { useOtherExpenses } from '@/hooks/useOtherExpenses';
 import { useAuth } from '@/contexts/AuthContext';
@@ -402,7 +404,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
       <section>
         <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
-          Szczegóły
+          Szczegóły - {formatMonthPolish(monthStr)}
         </h2>
 
         {playerStats.length === 0 ? (
@@ -461,6 +463,8 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
           </div>
         )}
       </section>
+
+      <PlayerPaymentHistory players={players} payments={payments} allMonths={allMonths} />
     </div>
   );
 }
