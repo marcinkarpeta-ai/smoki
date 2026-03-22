@@ -160,10 +160,26 @@ export function AttendanceView({
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-primary" />
-            Płatności - {formatMonthPolish(currentMonth)}
-          </h2>
+            <button
+              onClick={handlePrevMonth}
+              disabled={paymentMonth <= minMonth}
+              className="p-1 rounded-lg hover:bg-muted/50 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground">
+              {formatMonthPolish(paymentMonth)}
+            </h2>
+            <button
+              onClick={handleNextMonth}
+              disabled={paymentMonth >= maxMonth}
+              className="p-1 rounded-lg hover:bg-muted/50 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+          </div>
           <span className="text-sm font-medium text-success bg-success/10 px-3 py-1 rounded-full">
             {paidCount}/{playersWithAttendance.length}
           </span>
