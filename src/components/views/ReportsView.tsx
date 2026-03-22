@@ -100,7 +100,11 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
     return total;
   }, [allMonths, getTotalPaymentsByMonth, getHallCost, getTotalExpensesByMonth]);
 
-  const handlePrevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
+  const minReportMonth = new Date('2026-01-01');
+  const handlePrevMonth = () => {
+    const prev = subMonths(selectedMonth, 1);
+    if (prev >= minReportMonth) setSelectedMonth(prev);
+  };
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
 
   const handleSaveHallCost = () => {
