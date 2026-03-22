@@ -1,70 +1,36 @@
 
 
-# Plan: Płatności z góry i przenoszenie nadpłat
+# Plan: Nawigacja płatności między miesiącami
 
 ## Problem
 
-Dwa powiązane problemy:
-1. Nie można dodać płatności zanim zawodnik pojawi się na treningu
-2. Gdy ktoś płaci np. 200 zł zamiast 150 zł, nie ma możliwości przeniesienia nadpłaty na kolejny miesiąc
+Sekcja płatności jest zablokowana na bieżący miesiąc (`getCurrentMonth()`). Nie można przejść do przyszłych miesięcy (np. kwiecień), żeby wpisać płatność z góry.
 
 ## Rozwiązanie
 
-### 1. Sekcja płatności — pokazanie wszystkich zawodników
-
-W `AttendanceView.tsx` sekcja płatności zostanie podzielona na:
-- **Główna lista**: zawodnicy z obecnością (jak dotychczas)
-- **Składana sekcja "Opłać z góry"**: zawodnicy bez obecności w danym miesiącu, z przyciskiem w szarym stylu
-
-### 2. Przenoszenie nadpłaty na kolejny miesiąc
-
-Przy wpisywaniu płatności dodać opcję podziału kwoty:
-- Gracz płaci np. 200 zł
-- Użytkownik wpisuje 200 zł i widzi checkbox/przełącznik **"Przenieś nadpłatę na następny miesiąc"**
-- Po zaznaczeniu: kwota standardowa (np. 150 zł) zostaje na bieżący miesiąc, a reszta (50 zł) automatycznie tworzy rekord płatności na następny miesiąc
+Dodać nawigację miesiącami (strzałki lewo/prawo) w nagłówku sekcji płatności, analogicznie do nawigacji dat w sekcji obecności.
 
 ```text
-┌─ Wpisz kwotę ───────────────────────┐
-│  [200] zł                            │
-│  ☑ Przenieś nadpłatę na nast. mies. │
-│                                      │
-│  Bieżący miesiąc: 150 zł            │
-│  Następny miesiąc: 50 zł            │
-│                         [✓]  [✕]    │
-└──────────────────────────────────────┘
+┌─ Płatności ─────────────────────────┐
+│  ◀  Marzec 2026  ▶     3/5         │
+│  ...                                │
+└─────────────────────────────────────┘
 ```
 
-### Zmiany w kodzie
+- Nawigacja pozwala przechodzić od najstarszego miesiąca (w którym istnieje jakakolwiek obecność lub płatność) aż do **bieżący miesiąc + 2** (żeby można było opłacić przyszłe miesiące).
+- Domyślnie wybrany jest bieżący miesiąc.
 
-**`PaymentToggle.tsx`**:
-- Dodać pole checkbox "Przenieś nadpłatę" widoczne gdy wpisana kwota > standardowej (150 zł)
-- Dodać wyświetlenie podziału kwoty (bieżący/następny miesiąc)
-- Nowy prop `onSplitPayment?: (currentAmount: number, nextMonthAmount: number) => void`
-- Prop `currentMonth: string` potrzebny do obliczenia następnego miesiąca
+## Zmiany w kodzie
 
-**`usePayments.ts`**:
-- Nowa mutacja `splitPayment` — tworzy dwa rekordy: jeden na bieżący miesiąc, drugi na następny
-- Logika: insert płatności z `is_paid: true` na oba miesiące z odpowiednimi kwotami
+### `AttendanceView.tsx`
+- Zamienić `const currentMonth = getCurrentMonth()` na `const [paymentMonth, setPaymentMonth] = useState(getCurrentMonth())`
+- Dodać funkcje `handlePrevMonth` / `handleNextMonth` (używając `addMonths` / `format` z `date-fns`)
+- Dodać przyciski nawigacji (strzałki) obok nagłówka "Płatności - {miesiąc}"
+- Przeliczyć `playersWithAttendance` i `playersWithoutAttendance` na podstawie `paymentMonth` (nie tylko bieżącego miesiąca)
+- Zaktualizować wszystkie odwołania do `currentMonth` → `paymentMonth`
 
-**`AttendanceView.tsx`**:
-- Podział zawodników na `playersWithAttendance` i `playersWithoutAttendance`
-- Dodanie składanej sekcji (Collapsible z shadcn) z zawodnikami bez obecności
-- Przekazanie `onSplitPayment` i `currentMonth` do `PaymentToggle`
-- Statystyki `paidCount/total` liczone nadal tylko z grupy z obecnością
-
-**`Index.tsx`**:
-- Dodanie handlera `handleSplitPayment` wywołującego nową mutację z `usePayments`
-
-### Baza danych
-
-Brak zmian — obecna tabela `payments` już obsługuje wiele rekordów dla różnych miesięcy. Nadpłata to po prostu drugi rekord INSERT z następnym miesiącem.
-
-### Efekt końcowy
-
-| Scenariusz | Działanie |
-|---|---|
-| Gracz płaci 150 zł | Normalny zapis jak dotychczas |
-| Gracz płaci 200 zł bez przeniesienia | Zapis 200 zł na bieżący miesiąc |
-| Gracz płaci 200 zł z przeniesieniem | 150 zł na bieżący + 50 zł na następny miesiąc |
-| Gracz nie był na treningu | Widoczny w sekcji "Opłać z góry" |
+### Bez zmian
+- Baza danych — bez zmian
+- `usePayments.ts` — bez zmian (już obsługuje dowolny miesiąc)
+- `Index.tsx` — bez zmian (handlery przyjmują miesiąc jako parametr)
 
