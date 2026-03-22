@@ -1,4 +1,4 @@
-import { ClipboardCheck, BarChart3, Users, UserCog, LogOut } from 'lucide-react';
+import { ClipboardCheck, Wallet, BarChart3, Users, UserCog, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ export function BottomNav({ activeTab, onTabChange, showPlayers = false, showUse
 
   const tabs = [
     { id: 'attendance' as const, label: 'Obecność', icon: ClipboardCheck, show: true },
+    { id: 'payments' as const, label: 'Płatności', icon: Wallet, show: true },
     { id: 'reports' as const, label: 'Raporty', icon: BarChart3, show: true },
     { id: 'players' as const, label: 'Zawodnicy', icon: Users, show: showPlayers },
     { id: 'users' as const, label: 'Użytkownicy', icon: UserCog, show: showUsers },
