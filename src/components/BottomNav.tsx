@@ -1,4 +1,4 @@
-import { ClipboardCheck, BarChart3, Users, UserCog, LogOut } from 'lucide-react';
+import { ClipboardCheck, Wallet, BarChart3, Users, UserCog, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
