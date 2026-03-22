@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck, Wallet, Building2, Receipt, PiggyBank, Plus, Trash2, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, CalendarX, CalendarCheck, Wallet, Building2, Receipt, PiggyBank, Plus, Trash2, TrendingDown, User, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addMonths, subMonths } from 'date-fns';
 import { getTrainingSessions, formatMonthPolish, formatDatePolish } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useHallCosts } from '@/hooks/useHallCosts';
 import { useOtherExpenses } from '@/hooks/useOtherExpenses';
 import { useAuth } from '@/contexts/AuthContext';
