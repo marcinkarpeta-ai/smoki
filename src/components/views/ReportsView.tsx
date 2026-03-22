@@ -108,7 +108,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
 
   const handleSaveHallCost = () => {
-    const amount = parseFloat(hallCostInput) || 1100;
+    const amount = parseFloat(hallCostInput) || 0;
     setHallCost(monthStr, amount);
     setIsEditingHallCost(false);
   };
