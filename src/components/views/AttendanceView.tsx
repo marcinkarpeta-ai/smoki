@@ -43,6 +43,20 @@ export function AttendanceView({
   const [selectedDate, setSelectedDate] = useState(getNextTrainingDate());
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const currentMonth = getCurrentMonth();
+  const [paymentMonth, setPaymentMonth] = useState(currentMonth);
+
+  const maxMonth = format(addMonths(new Date(), 2), 'yyyy-MM');
+  const minMonth = '2024-01';
+
+  const handlePrevMonth = () => {
+    const prev = format(subMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
+    if (prev >= minMonth) setPaymentMonth(prev);
+  };
+
+  const handleNextMonth = () => {
+    const next = format(addMonths(new Date(paymentMonth + '-01'), 1), 'yyyy-MM');
+    if (next <= maxMonth) setPaymentMonth(next);
+  };
 
   const isCancelled = cancelledDates.includes(selectedDate);
 
