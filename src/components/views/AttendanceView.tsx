@@ -48,7 +48,7 @@ export function AttendanceView({
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   const maxMonth = format(addMonths(new Date(), 2), 'yyyy-MM');
-  const minMonth = '2024-01';
+  const minMonth = '2026-01';
 
   // Generate list of months for picker
   const availableMonths = useMemo(() => {
