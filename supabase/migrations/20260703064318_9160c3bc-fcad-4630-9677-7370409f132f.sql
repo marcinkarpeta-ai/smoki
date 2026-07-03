@@ -1,0 +1,5 @@
+ALTER TABLE public.attendance DROP CONSTRAINT attendance_marked_by_fkey, ADD CONSTRAINT attendance_marked_by_fkey FOREIGN KEY (marked_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.payments DROP CONSTRAINT payments_marked_by_fkey, ADD CONSTRAINT payments_marked_by_fkey FOREIGN KEY (marked_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.cancelled_sessions DROP CONSTRAINT cancelled_sessions_cancelled_by_fkey, ADD CONSTRAINT cancelled_sessions_cancelled_by_fkey FOREIGN KEY (cancelled_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.hall_costs DROP CONSTRAINT hall_costs_created_by_fkey, ADD CONSTRAINT hall_costs_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.other_expenses DROP CONSTRAINT other_expenses_created_by_fkey, ADD CONSTRAINT other_expenses_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
