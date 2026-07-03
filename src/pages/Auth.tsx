@@ -6,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Users as UsersIcon } from 'lucide-react';
 import { DragonLogo } from '@/components/DragonLogo';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Nieprawidłowy adres email');
 const passwordSchema = z.string().min(6, 'Hasło musi mieć co najmniej 6 znaków');
+const PLAYER_EMAIL = 'player@smoki.local';
 
-type ViewMode = 'login' | 'forgot-password' | 'reset-password';
+type ViewMode = 'login' | 'forgot-password' | 'reset-password' | 'player-login';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -28,6 +30,8 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [viewMode, setViewMode] = useState<ViewMode>('login');
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [playerPassword, setPlayerPassword] = useState('');
+  const [playerPasswordError, setPlayerPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if this is a password reset callback
@@ -150,6 +154,27 @@ export default function Auth() {
     }
   };
 
+  const handlePlayerLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPlayerPasswordError(null);
+    if (!playerPassword) {
+      setPlayerPasswordError('Podaj hasło');
+      return;
+    }
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: PLAYER_EMAIL,
+      password: playerPassword,
+    });
+    setIsLoading(false);
+    if (error) {
+      setPlayerPasswordError('Nieprawidłowe hasło');
+      return;
+    }
+    toast({ title: 'Zalogowano', description: 'Witaj w SMoKi!' });
+    navigate('/');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -170,6 +195,7 @@ export default function Auth() {
             {viewMode === 'login' && 'Zaloguj się do systemu'}
             {viewMode === 'forgot-password' && 'Zresetuj swoje hasło'}
             {viewMode === 'reset-password' && 'Ustaw nowe hasło'}
+            {viewMode === 'player-login' && 'Zaloguj się jako Zawodnik'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -225,6 +251,68 @@ export default function Auth() {
                 }}
               >
                 Zapomniałem hasła
+              </Button>
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">lub</span>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setViewMode('player-login');
+                  setErrors({});
+                  setPassword('');
+                  setPlayerPassword('');
+                  setPlayerPasswordError(null);
+                }}
+              >
+                <UsersIcon className="w-4 h-4 mr-2" />
+                Zaloguj jako Zawodnik
+              </Button>
+            </form>
+          )}
+
+          {viewMode === 'player-login' && (
+            <form onSubmit={handlePlayerLogin} className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Wpisz wspólne hasło zespołu, aby zobaczyć obecności i płatności.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="player-password">Hasło zespołu</Label>
+                <Input
+                  id="player-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={playerPassword}
+                  onChange={(e) => setPlayerPassword(e.target.value)}
+                  className={playerPasswordError ? 'border-destructive' : ''}
+                  autoFocus
+                />
+                {playerPasswordError && (
+                  <p className="text-sm text-destructive">{playerPasswordError}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full gradient-primary" disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Wejdź'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setViewMode('login');
+                  setPlayerPassword('');
+                  setPlayerPasswordError(null);
+                }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Powrót do logowania
               </Button>
             </form>
           )}

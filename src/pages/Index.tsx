@@ -17,8 +17,8 @@ export type Tab = 'attendance' | 'payments' | 'reports' | 'players' | 'users';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, canAddPlayers, canDeletePlayers, canViewPlayersTab, canManageUsers, canManageAttendance, canManagePayments, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('attendance');
+  const { user, isLoading: authLoading, canAddPlayers, canDeletePlayers, canViewPlayersTab, canManageUsers, canManageAttendance, canManagePayments, isAdmin, isPlayer } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>(() => 'attendance');
   
   const { players, addPlayer, deletePlayer } = usePlayers();
   const { attendance, toggleAttendance } = useAttendance();
