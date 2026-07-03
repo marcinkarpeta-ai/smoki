@@ -22,6 +22,7 @@ interface AuthContextType {
   canViewPlayersTab: boolean;
   canManageUsers: boolean;
   isAdmin: boolean;
+  isPlayer: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isAdmin = role === 'admin';
+  const isPlayer = role === 'player';
   const canManageAttendance = role === 'admin' || role === 'attendance_manager';
   const canManagePayments = role === 'admin' || role === 'payment_manager';
   const canAddPlayers = role === 'admin' || role === 'attendance_manager';
@@ -144,7 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canDeletePlayers,
       canViewPlayersTab,
       canManageUsers,
-      isAdmin
+      isAdmin,
+      isPlayer
     }}>
       {children}
     </AuthContext.Provider>
