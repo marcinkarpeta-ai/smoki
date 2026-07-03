@@ -1,49 +1,32 @@
-# Rola "Zawodnik" - dostęp tylko do odczytu
+## Zmiany w `src/components/views/ReportsView.tsx`
 
-## Cel
-Umożliwić zawodnikom drużyny podgląd swoich obecności i płatności bez ujawniania aplikacji osobom postronnym. Wspólne hasło "team access", jedno konto techniczne w bazie, admin może je zmienić z panelu Użytkowników.
+### 1. "Odbyte" — tylko przeszłe, nieodwołane treningi
+Aktualnie liczy wszystkie zaplanowane minus odwołane (stąd w lipcu widać 9, mimo że jeszcze żaden się nie odbył).
 
-## Jak to działa (dla użytkownika)
-- Na ekranie logowania pojawia się nowy przycisk **"Zaloguj jako Zawodnik"**.
-- Otwiera się pole na jedno hasło (bez maila). Po poprawnym haśle następuje logowanie do wspólnego konta "Zawodnik".
-- Zawodnik widzi zakładki **Obecność**, **Płatności**, **Raporty** — wszystko wyłącznie do podglądu. Może rozwijać karty w "Historia płatności zawodników".
-- Nie widzi zakładek **Zawodnicy** i **Użytkownicy**, nie może dodawać/edytować/usuwać danych ani zmieniać haseł.
-- Admin w zakładce **Użytkownicy** ma nowy przycisk **"Zmień hasło Zawodnika"**.
+Dodać filtr po dacie:
+```ts
+const today = format(new Date(), 'yyyy-MM-dd');
+const heldSessions = activeSessions.filter(s => s.date <= today);
+```
 
-## Zakres zmian
+Kafelek "Odbyte" pokazuje `heldSessions.length` zamiast `activeSessions.length`. Podpis "z X treningów" zostaje jako łączna liczba zaplanowanych w miesiącu.
 
-### 1. Baza danych (migracja)
-- Dodać wartość `'player'` do enum `app_role`.
-- Utworzyć tabelę `player_access` (jeden wiersz): `password_hash` (bcrypt), `updated_at`, `updated_by`. Pełny RLS — brak dostępu z klienta; tylko edge functions (service role).
-- Rozszerzyć politykę SELECT na tabelach `players`, `attendance`, `payments`, `hall_costs`, `other_expenses`, `cancelled_sessions`, `profiles` tak, aby użytkownicy z rolą `player` mogli odczytywać (INSERT/UPDATE/DELETE pozostają niedostępne).
-- Wyłączyć maskowanie e-maili dla `player` (i tak jest już maskowane dla nie-adminów — bez zmian).
-- `handle_new_user` bez zmian; techniczne konto zawodnika tworzone przez edge function poniżej.
+### 2. "Śr. obecność" — średnia frekwencja na trening
+Aktualny wzór: suma obecności ÷ liczba zawodników (średnio ile treningów na jednego zawodnika).
 
-### 2. Edge functions
-- `player-login` (publiczna, verify_jwt=false):
-  - Wejście: `{ password }`.
-  - Pobiera hash z `player_access`, weryfikuje bcrypt.
-  - Jeśli OK — loguje wspólne konto techniczne (`admin.generateLink` typu magiclink dla ustalonego maila `player@smoki.local` lub `admin.createSession`) i zwraca `access_token` + `refresh_token`, które klient ustawia przez `supabase.auth.setSession`.
-  - Rate limit: prosty licznik nieudanych prób w pamięci/tablicy `player_login_attempts` (opcjonalnie).
-- `set-player-password` (verify_jwt=false, sprawdza rolę admina w kodzie):
-  - Wejście: `{ password }` (min. 8 znaków, walidacja Zod).
-  - Hashuje bcrypt i zapisuje w `player_access`.
-- Bootstrap konta: przy pierwszym `set-player-password` funkcja tworzy usera `player@smoki.local` (jeśli nie istnieje), przypisuje mu rolę `player` w `user_roles`.
+Nowy wzór: suma obecności na odbytych treningach ÷ liczba odbytych treningów (średnio ilu zawodników było na jednym treningu).
 
-### 3. Frontend
-- `src/pages/Auth.tsx`: dodać drugą kartę / przełącznik "Zawodnik" z jednym polem hasła; wywołuje `player-login` i `supabase.auth.setSession`.
-- `src/contexts/AuthContext.tsx`: dodać `isPlayer`; wszystkie flagi `canManage*`, `canAdd*`, `canDelete*`, `canViewPlayersTab`, `canManageUsers` = false dla `player`.
-- `src/components/BottomNav.tsx`: dla `player` pokazywać tylko Obecność / Płatności / Raporty / Wyloguj.
-- `src/components/views/AttendanceView.tsx` i `PaymentsView.tsx`: już respektują `canEdit*` (checkboxy/toggle'e disabled). Zweryfikować, że w trybie `player` nic klikalnego się nie renderuje (ukryć przyciski "Anuluj trening", picker jest ok).
-- `src/components/PlayerPaymentHistory.tsx`: bez zmian — jest już tylko do odczytu i rozwijane.
-- `src/components/views/UsersView.tsx`: dodać sekcję "Hasło zawodnika" z przyciskiem "Zmień hasło", widoczną tylko dla admina; wywołuje `set-player-password`.
-- `src/pages/Index.tsx`: routing/zakładki zablokowane dla `player` (redirect na Raporty jeśli spróbuje wejść w Zawodnicy/Użytkownicy).
+```ts
+const heldDates = new Set(heldSessions.map(s => s.date));
+const totalPresences = attendance.filter(a => a.present && heldDates.has(a.date)).length;
+const avgAttendance = heldSessions.length > 0
+  ? Math.round(totalPresences / heldSessions.length)
+  : 0;
+```
 
-### 4. Bezpieczeństwo
-- Hasło nigdy nie trafia do klienta ani do logów; bcrypt cost ≥ 10.
-- Konto techniczne `player@smoki.local` — e-mail poza domeną, nie da się przez nie przejść resetu hasła (reset i tak wyłączony w UI dla playera).
-- Rola `player` egzekwowana w RLS; frontendowe flagi to tylko UX.
-- Publiczna funkcja `player-login` bez CORS wildcard na innych trasach i z walidacją Zod.
+Podpis kafelka zmienić z "z X treningów" na "osób/trening" żeby jasno komunikował sens liczby.
 
-## Uwaga
-Wspólne hasło = wszyscy zawodnicy widzą dane wszystkich (imiennie, kwoty, zaległości) — tak jak potwierdziłeś w pytaniach. Jeśli hasło wycieknie, admin zmienia je jednym kliknięciem w Użytkownikach.
+### 3. Spójność pozostałych metryk
+- "Śr. obecność" i "Zapłacone" — dotychczas bazowały na `activeSessions`; po zmianie używają `heldSessions` tam gdzie chodzi o faktycznie odbyte treningi. Statystyki per‑zawodnik w tabeli (`attendanceCount / totalSessions`) zostają bez zmian — pokazują obecności z odbytych treningów wobec wszystkich aktywnych w miesiącu (informacja "ile jeszcze zostało").
+
+Bez zmian w bazie danych, hookach ani innych widokach.
