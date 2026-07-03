@@ -1,4 +1,4 @@
-import { format, addDays, startOfMonth, endOfMonth, isAfter, isBefore, isSameDay, getDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth, isAfter, isBefore, isSameDay, getDay, startOfWeek, endOfWeek, addMonths } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import type { TrainingSession } from '@/types';
 
@@ -23,6 +23,25 @@ export function getTrainingSessions(month: Date): TrainingSession[] {
     current = addDays(current, 1);
   }
   
+  return sessions;
+}
+
+export function getTrainingSessionsInRange(startDate: Date, endDate: Date): TrainingSession[] {
+  const sessions: TrainingSession[] = [];
+  let current = startOfMonth(startDate);
+  const end = endOfMonth(endDate);
+
+  while (!isAfter(current, end)) {
+    const dayOfWeek = getDay(current);
+    if (TRAINING_DAYS.includes(dayOfWeek)) {
+      sessions.push({
+        date: format(current, 'yyyy-MM-dd'),
+        dayOfWeek: dayOfWeek === 2 ? 'Wtorek' : 'Czwartek',
+      });
+    }
+    current = addDays(current, 1);
+  }
+
   return sessions;
 }
 

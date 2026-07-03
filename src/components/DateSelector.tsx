@@ -1,7 +1,8 @@
 import { ChevronLeft, ChevronRight, Calendar, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDatePolish, formatDayOfWeek, getTrainingSessions } from '@/utils/dateUtils';
-import { useMemo, useState } from 'react';
+import { formatDatePolish, formatDayOfWeek, getTrainingSessionsInRange } from '@/utils/dateUtils';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { addMonths } from 'date-fns';
 
 interface DateSelectorProps {
   selectedDate: string;
@@ -11,15 +12,29 @@ interface DateSelectorProps {
 
 export function DateSelector({ selectedDate, onDateChange, cancelledDates = [] }: DateSelectorProps) {
   const [showPicker, setShowPicker] = useState(false);
-  
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLButtonElement>(null);
+
   const sessions = useMemo(() => {
-    const currentMonth = new Date(selectedDate);
-    return getTrainingSessions(currentMonth);
+    // Lower bound: 2026-01 (spójnie z płatnościami i raportami).
+    // Upper bound: max(selectedDate, dzisiaj + 2 miesiące), by strzałki w przód nadal działały.
+    const start = new Date('2026-01-01');
+    const today = new Date();
+    const selected = new Date(selectedDate);
+    const upperCandidate = addMonths(today, 2);
+    const end = selected > upperCandidate ? selected : upperCandidate;
+    return getTrainingSessionsInRange(start, end);
   }, [selectedDate]);
-  
+
   const currentIndex = sessions.findIndex(s => s.date === selectedDate);
   const isCurrentCancelled = cancelledDates.includes(selectedDate);
-  
+
+  useEffect(() => {
+    if (showPicker && activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({ block: 'center' });
+    }
+  }, [showPicker]);
+
   const handlePrev = () => {
     if (currentIndex > 0) {
       onDateChange(sessions[currentIndex - 1].date);
@@ -93,20 +108,22 @@ export function DateSelector({ selectedDate, onDateChange, cancelledDates = [] }
       </div>
       
       {showPicker && (
-        <div className="absolute top-full left-0 right-0 mt-2 glass-card rounded-2xl p-3 z-10 max-h-64 overflow-y-auto animate-slide-up">
+        <div ref={pickerRef} className="absolute top-full left-0 right-0 mt-2 glass-card rounded-2xl p-3 z-10 max-h-64 overflow-y-auto animate-slide-up">
           <div className="space-y-1">
             {sessions.map((session) => {
               const isCancelled = cancelledDates.includes(session.date);
+              const isSelected = session.date === selectedDate;
               return (
                 <button
                   key={session.date}
+                  ref={isSelected ? activeItemRef : undefined}
                   onClick={() => {
                     onDateChange(session.date);
                     setShowPicker(false);
                   }}
                   className={cn(
                     "w-full p-3 rounded-xl text-left tap-target flex items-center justify-between transition-all",
-                    session.date === selectedDate 
+                    isSelected
                       ? "gradient-primary text-primary-foreground" 
                       : isCancelled
                         ? "bg-destructive/10 hover:bg-destructive/20"
@@ -117,14 +134,14 @@ export function DateSelector({ selectedDate, onDateChange, cancelledDates = [] }
                     {isCancelled && <Ban className="w-4 h-4 text-destructive" />}
                     <span className={cn(
                       "font-medium",
-                      isCancelled && session.date !== selectedDate && "text-destructive line-through"
+                      isCancelled && !isSelected && "text-destructive line-through"
                     )}>
                       {formatDatePolish(session.date)}
                     </span>
                   </div>
                   <span className={cn(
                     "text-sm",
-                    session.date === selectedDate ? "text-primary-foreground/80" : "text-muted-foreground"
+                    isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                   )}>
                     {session.dayOfWeek}
                   </span>
