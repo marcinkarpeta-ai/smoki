@@ -46,6 +46,10 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
   const activeSessions = sessions.filter(s => !cancelledDates.has(s.date));
   const activeSessionDates = new Set(activeSessions.map(s => s.date));
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const heldSessions = activeSessions.filter(s => s.date <= today);
+  const heldSessionDates = new Set(heldSessions.map(s => s.date));
+
   const playerStats = useMemo(() => {
     return players.map(player => {
       const attendanceCount = attendance.filter(
@@ -71,8 +75,9 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
 
   const playersWithAttendanceCount = playerStats.filter(s => s.hasAttendance).length;
   const totalPaid = playerStats.filter(s => s.hasAttendance && s.paid).length;
-  const avgAttendance = playerStats.length > 0 
-    ? Math.round(playerStats.reduce((sum, s) => sum + s.attendanceCount, 0) / playerStats.length)
+  const totalPresences = attendance.filter(a => a.present && heldSessionDates.has(a.date)).length;
+  const avgAttendance = heldSessions.length > 0
+    ? Math.round(totalPresences / heldSessions.length)
     : 0;
 
   // Financial data
@@ -357,7 +362,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
             <CalendarCheck className="w-5 h-5" />
             <span className="text-sm font-medium">Odbyte</span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{activeSessions.length}</p>
+          <p className="text-3xl font-bold text-foreground">{heldSessions.length}</p>
           <p className="text-sm text-muted-foreground">z {sessions.length} treningów</p>
         </div>
         
@@ -378,7 +383,7 @@ export function ReportsView({ players, attendance, payments, cancelledSessions =
             <span className="text-sm font-medium">Śr. obecność</span>
           </div>
           <p className="text-3xl font-bold text-foreground">{avgAttendance}</p>
-          <p className="text-sm text-muted-foreground">z {activeSessions.length} treningów</p>
+          <p className="text-sm text-muted-foreground">osób/trening</p>
         </div>
         
         <div className="glass-card rounded-2xl p-4">
