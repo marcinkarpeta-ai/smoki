@@ -104,7 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setRole(null);
-    window.location.href = '/auth';
   };
 
   const resetPassword = async (email: string) => {
