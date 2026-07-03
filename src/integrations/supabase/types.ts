@@ -177,6 +177,27 @@ export type Database = {
           },
         ]
       }
+      player_access: {
+        Row: {
+          id: string
+          password_hash: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          password_hash: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          password_hash?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       players: {
         Row: {
           created_at: string
@@ -269,7 +290,7 @@ export type Database = {
       mask_email: { Args: { email: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "attendance_manager" | "payment_manager"
+      app_role: "admin" | "attendance_manager" | "payment_manager" | "player"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -397,7 +418,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "attendance_manager", "payment_manager"],
+      app_role: ["admin", "attendance_manager", "payment_manager", "player"],
     },
   },
 } as const

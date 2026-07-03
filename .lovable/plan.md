@@ -1,36 +1,49 @@
-# Plan: Cofanie się do treningów z poprzednich miesięcy w zakładce Obecność
+# Rola "Zawodnik" - dostęp tylko do odczytu
 
-## Problem
+## Cel
+Umożliwić zawodnikom drużyny podgląd swoich obecności i płatności bez ujawniania aplikacji osobom postronnym. Wspólne hasło "team access", jedno konto techniczne w bazie, admin może je zmienić z panelu Użytkowników.
 
-`DateSelector` generuje listę treningów tylko dla miesiąca aktualnie wybranej daty (`getTrainingSessions(new Date(selectedDate))`). Gdy jesteś na pierwszym treningu miesiąca (np. 2 lipca), strzałka "wstecz" jest zablokowana — nie można wrócić do ostatniego treningu z czerwca.
+## Jak to działa (dla użytkownika)
+- Na ekranie logowania pojawia się nowy przycisk **"Zaloguj jako Zawodnik"**.
+- Otwiera się pole na jedno hasło (bez maila). Po poprawnym haśle następuje logowanie do wspólnego konta "Zawodnik".
+- Zawodnik widzi zakładki **Obecność**, **Płatności**, **Raporty** — wszystko wyłącznie do podglądu. Może rozwijać karty w "Historia płatności zawodników".
+- Nie widzi zakładek **Zawodnicy** i **Użytkownicy**, nie może dodawać/edytować/usuwać danych ani zmieniać haseł.
+- Admin w zakładce **Użytkownicy** ma nowy przycisk **"Zmień hasło Zawodnika"**.
 
-## Rozwiązanie
+## Zakres zmian
 
-Zmienić logikę `DateSelector` tak, aby operowała na **zakresie miesięcy** (aktualny miesiąc ± 6 miesięcy w tył od dzisiaj, do miesiąca bieżącej daty), a nie tylko na jednym miesiącu wybranej daty. Dzięki temu strzałki będą płynnie przechodzić między treningami z różnych miesięcy.
+### 1. Baza danych (migracja)
+- Dodać wartość `'player'` do enum `app_role`.
+- Utworzyć tabelę `player_access` (jeden wiersz): `password_hash` (bcrypt), `updated_at`, `updated_by`. Pełny RLS — brak dostępu z klienta; tylko edge functions (service role).
+- Rozszerzyć politykę SELECT na tabelach `players`, `attendance`, `payments`, `hall_costs`, `other_expenses`, `cancelled_sessions`, `profiles` tak, aby użytkownicy z rolą `player` mogli odczytywać (INSERT/UPDATE/DELETE pozostają niedostępne).
+- Wyłączyć maskowanie e-maili dla `player` (i tak jest już maskowane dla nie-adminów — bez zmian).
+- `handle_new_user` bez zmian; techniczne konto zawodnika tworzone przez edge function poniżej.
 
-Dolna granica: styczeń 2026 (spójnie z limitem w płatnościach i raportach).
-Górna granica: nie potrzebna — treningi w przyszłości są normalną częścią użytku.
+### 2. Edge functions
+- `player-login` (publiczna, verify_jwt=false):
+  - Wejście: `{ password }`.
+  - Pobiera hash z `player_access`, weryfikuje bcrypt.
+  - Jeśli OK — loguje wspólne konto techniczne (`admin.generateLink` typu magiclink dla ustalonego maila `player@smoki.local` lub `admin.createSession`) i zwraca `access_token` + `refresh_token`, które klient ustawia przez `supabase.auth.setSession`.
+  - Rate limit: prosty licznik nieudanych prób w pamięci/tablicy `player_login_attempts` (opcjonalnie).
+- `set-player-password` (verify_jwt=false, sprawdza rolę admina w kodzie):
+  - Wejście: `{ password }` (min. 8 znaków, walidacja Zod).
+  - Hashuje bcrypt i zapisuje w `player_access`.
+- Bootstrap konta: przy pierwszym `set-player-password` funkcja tworzy usera `player@smoki.local` (jeśli nie istnieje), przypisuje mu rolę `player` w `user_roles`.
 
-## Zmiany w kodzie
+### 3. Frontend
+- `src/pages/Auth.tsx`: dodać drugą kartę / przełącznik "Zawodnik" z jednym polem hasła; wywołuje `player-login` i `supabase.auth.setSession`.
+- `src/contexts/AuthContext.tsx`: dodać `isPlayer`; wszystkie flagi `canManage*`, `canAdd*`, `canDelete*`, `canViewPlayersTab`, `canManageUsers` = false dla `player`.
+- `src/components/BottomNav.tsx`: dla `player` pokazywać tylko Obecność / Płatności / Raporty / Wyloguj.
+- `src/components/views/AttendanceView.tsx` i `PaymentsView.tsx`: już respektują `canEdit*` (checkboxy/toggle'e disabled). Zweryfikować, że w trybie `player` nic klikalnego się nie renderuje (ukryć przyciski "Anuluj trening", picker jest ok).
+- `src/components/PlayerPaymentHistory.tsx`: bez zmian — jest już tylko do odczytu i rozwijane.
+- `src/components/views/UsersView.tsx`: dodać sekcję "Hasło zawodnika" z przyciskiem "Zmień hasło", widoczną tylko dla admina; wywołuje `set-player-password`.
+- `src/pages/Index.tsx`: routing/zakładki zablokowane dla `player` (redirect na Raporty jeśli spróbuje wejść w Zawodnicy/Użytkownicy).
 
-### `src/components/DateSelector.tsx`
+### 4. Bezpieczeństwo
+- Hasło nigdy nie trafia do klienta ani do logów; bcrypt cost ≥ 10.
+- Konto techniczne `player@smoki.local` — e-mail poza domeną, nie da się przez nie przejść resetu hasła (reset i tak wyłączony w UI dla playera).
+- Rola `player` egzekwowana w RLS; frontendowe flagi to tylko UX.
+- Publiczna funkcja `player-login` bez CORS wildcard na innych trasach i z walidacją Zod.
 
-- Zamiast `getTrainingSessions(new Date(selectedDate))` — wygenerować sesje dla **całego zakresu** od `2026-01` do co najmniej miesiąca 2 miesiące w przód od dzisiaj (i nie mniej niż miesiąc wybranej daty).
-- Strzałki `handlePrev` / `handleNext` będą działać na tej pełnej liście — automatycznie przejdą do poprzedniego/następnego miesiąca gdy dotrą do brzegu bieżącego.
-- Picker (rozwijana lista) też pokaże pełny zakres, pogrupowany chronologicznie. Aby uniknąć bardzo długiej listy, picker będzie automatycznie przewijał się do wybranej daty przy otwieraniu.
-
-### `src/utils/dateUtils.ts` (opcjonalnie)
-
-- Dodać helper `getTrainingSessionsInRange(startDate: Date, endDate: Date)` zwracający treningi z zadanego zakresu — czystsze niż wołanie `getTrainingSessions` w pętli po miesiącach.
-
-## Bez zmian
-
-- `AttendanceView` — używa istniejącego API `DateSelector` (props `selectedDate`, `onDateChange`), więc żadne zmiany nie są tam potrzebne.
-- Uprawnienia / RLS — obecne polityki już pozwalają zapisywać obecność za dowolną datę.
-- Baza danych — bez zmian.
-
-## Efekt
-
-- Ze strzałki "wstecz" na 2 lipca cofniesz się do ostatniego treningu czerwca.
-- Możesz uzupełnić brakującą obecność za dowolny trening od stycznia 2026.
-- Picker daty pokazuje pełną historię treningów, a nie tylko miesiąc bieżącej daty.
+## Uwaga
+Wspólne hasło = wszyscy zawodnicy widzą dane wszystkich (imiennie, kwoty, zaległości) — tak jak potwierdziłeś w pytaniach. Jeśli hasło wycieknie, admin zmienia je jednym kliknięciem w Użytkownikach.

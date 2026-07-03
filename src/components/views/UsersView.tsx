@@ -19,8 +19,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert, Trash2 } from 'lucide-react';
+import { Loader2, Users, Shield, ClipboardCheck, CreditCard, UserPlus, ShieldAlert, Trash2, KeyRound, User as UserIcon } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -28,30 +30,65 @@ type AppRole = Database['public']['Enums']['app_role'];
 const roleLabels: Record<AppRole, string> = {
   admin: 'Administrator',
   attendance_manager: 'Menedżer obecności',
-  payment_manager: 'Menedżer płatności'
+  payment_manager: 'Menedżer płatności',
+  player: 'Zawodnik'
 };
 
 const roleIcons: Record<AppRole, typeof Shield> = {
   admin: Shield,
   attendance_manager: ClipboardCheck,
-  payment_manager: CreditCard
+  payment_manager: CreditCard,
+  player: UserIcon
 };
 
 const roleColors: Record<AppRole, string> = {
   admin: 'bg-primary text-primary-foreground',
   attendance_manager: 'bg-blue-500 text-white',
-  payment_manager: 'bg-green-500 text-white'
+  payment_manager: 'bg-green-500 text-white',
+  player: 'bg-purple-500 text-white'
 };
+
+const PLAYER_EMAIL = 'player@smoki.local';
 
 export function UsersView() {
   const { isAdmin, user: currentUser } = useAuth();
   const { users, isLoading, updateRole, isUpdating, deleteUser, isDeleting } = useUsers();
   const { createUser, isCreating } = useCreateUser();
+  const { toast } = useToast();
   
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<string>('none');
   const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
+
+  const [playerPassword, setPlayerPassword] = useState('');
+  const [playerPasswordError, setPlayerPasswordError] = useState<string | null>(null);
+  const [isSettingPlayerPassword, setIsSettingPlayerPassword] = useState(false);
+
+  const handleSetPlayerPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPlayerPasswordError(null);
+    if (playerPassword.length < 8) {
+      setPlayerPasswordError('Hasło musi mieć co najmniej 8 znaków');
+      return;
+    }
+    setIsSettingPlayerPassword(true);
+    const { data, error } = await supabase.functions.invoke('set-player-password', {
+      body: { password: playerPassword }
+    });
+    setIsSettingPlayerPassword(false);
+    if (error || data?.error) {
+      const msg = data?.error || error?.message || 'Nie udało się zmienić hasła';
+      setPlayerPasswordError(msg);
+      toast({ variant: 'destructive', title: 'Błąd', description: msg });
+      return;
+    }
+    setPlayerPassword('');
+    toast({ title: 'Hasło zaktualizowane', description: 'Nowe wspólne hasło dla Zawodników zostało ustawione.' });
+  };
+
+  // Do not show the shared player account in the regular users list
+  const humanUsers = users.filter(u => u.email !== PLAYER_EMAIL);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +143,44 @@ export function UsersView() {
   return (
     <div className="space-y-6 pb-24">
       <PageHeader subtitle="Zarządzanie użytkownikami" />
+
+      {/* Shared player password */}
+      <Card className="glass-card border-primary/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <KeyRound className="w-5 h-5 text-primary" />
+            Hasło Zawodnika (wspólne)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Jedno wspólne hasło dla wszystkich zawodników. Logują się przez "Zaloguj jako Zawodnik" na ekranie logowania i widzą wyłącznie podgląd obecności, płatności i raportów.
+          </p>
+          <form onSubmit={handleSetPlayerPassword} className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Input
+                type="password"
+                placeholder="Nowe hasło (min. 8 znaków)"
+                value={playerPassword}
+                onChange={(e) => setPlayerPassword(e.target.value)}
+                className={playerPasswordError ? 'border-destructive' : ''}
+                autoComplete="new-password"
+              />
+              {playerPasswordError && (
+                <p className="text-sm text-destructive mt-1">{playerPasswordError}</p>
+              )}
+            </div>
+            <Button type="submit" className="gradient-primary" disabled={isSettingPlayerPassword}>
+              {isSettingPlayerPassword ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <KeyRound className="h-4 w-4 mr-2" />
+              )}
+              Ustaw hasło
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Add new user form */}
       <Card className="glass-card">
@@ -188,11 +263,11 @@ export function UsersView() {
             Zarejestrowani użytkownicy
           </span>
           <span className="text-sm text-muted-foreground">
-            {users.length}
+            {humanUsers.length}
           </span>
         </div>
 
-        {users.length === 0 ? (
+        {humanUsers.length === 0 ? (
           <Card className="glass-card">
             <CardContent className="py-8 text-center text-muted-foreground">
               Brak zarejestrowanych użytkowników
@@ -200,7 +275,7 @@ export function UsersView() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {users.map((user) => {
+            {humanUsers.map((user) => {
               const RoleIcon = user.role ? roleIcons[user.role] : null;
               
               return (
