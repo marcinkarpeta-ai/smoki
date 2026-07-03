@@ -269,7 +269,7 @@ export type Database = {
       mask_email: { Args: { email: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "attendance_manager" | "payment_manager"
+      app_role: "admin" | "attendance_manager" | "payment_manager" | "player"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -397,7 +397,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "attendance_manager", "payment_manager"],
+      app_role: ["admin", "attendance_manager", "payment_manager", "player"],
     },
   },
 } as const
